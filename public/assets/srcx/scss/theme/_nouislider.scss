@@ -1,0 +1,134 @@
+@each $color, $value in $theme-colors {
+  .noUi-#{$color} {
+    .noUi-connect {
+      background: var(--#{$prefix}#{$color}) !important;
+    }
+  }
+}
+
+.noUi-handle-square {
+  &.noUi-target {
+    --#{$prefix}noUi-handle-top: -2px;
+    .noUi-handle {
+      height: 16px;
+      width: 16px;
+
+      &::after,
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+.noUi-handle-circle {
+  &.noUi-target {
+    --#{$prefix}noUi-handle-top: -7px !important;
+    .noUi-handle {
+      height: 18px;
+      width: 18px;
+
+      border-radius: 50%;
+      &::after,
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+.noUi-slider-slim {
+  &.noUi-target {
+    --#{$prefix}noUi-track-height: 4px;
+    --#{$prefix}noUi-handle-top: -10px;
+  }
+}
+
+.noUi-target {
+  --#{$prefix}noUi-track-height: 0.75rem;
+  --#{$prefix}noUi-handle-top: -6px;
+  background: $form-range-track-bg;
+  border: none;
+  box-shadow: $btn-box-shadow;
+
+  &.noUi-horizontal {
+    height: var(--#{$prefix}noUi-track-height);
+
+    .noUi-handle {
+      right: -8px;
+    }
+  }
+
+  .noUi-connect {
+    background: var(--#{$prefix}primary);
+  }
+
+  .noUi-handle {
+    width: 16px;
+    height: 24px;
+    background: $white;
+    border: 1px solid var(--#{$prefix}border-color);
+    top: var(--#{$prefix}noUi-handle-top);
+    cursor: grab;
+
+    &:hover {
+      .noUi-tooltip {
+        display: block;
+      }
+    }
+
+    &::after,
+    &::before {
+      background: var(--#{$prefix}secondary-light);
+      height: 10px;
+      top: 6px;
+    }
+    &::after {
+      left: 9px;
+    }
+    &::before {
+      left: 4px;
+    }
+
+    .noUi-tooltip {
+      display: none;
+      background: var(--#{$prefix}emphasis-bg);
+      border: 1px solid var(--#{$prefix}border-color);
+      color: var(--#{$prefix}body-highlight);
+      font-size: $tooltip-font-size;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &.noUi-active {
+      .noUi-tooltip {
+        display: block;
+      }
+    }
+  }
+
+  .noUi-pips {
+    color: var(--#{$prefix}body-quaternary);
+    margin-top: map-get($spacers, 1);
+    .noUi-value-sub {
+      color: var(--#{$prefix}body-quaternary);
+    }
+    .noUi-marker,
+    .noUi-marker-large {
+      background: var(--#{$prefix}body-quaternary);
+    }
+  }
+}
+.age-range-slider {
+  &.noUi-target {
+    background: var(--#{$prefix}primary-lighter);
+    [data-bs-theme='dark'] &{
+      background: var(--#{$prefix}primary-bg-subtle);
+    }
+  }
+  .noUi-handle {
+    background-color: var(--#{$prefix}primary);
+    box-shadow: none;
+    border: none;
+  }
+}

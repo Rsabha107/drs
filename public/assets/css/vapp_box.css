@@ -1,0 +1,58 @@
+.main-card {
+  position: relative;
+  width: 350px;
+  height: 150px;
+  background-color: rgba(0, 0, 0, 0.2);/* #e0a300; /* mustard-like */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  font-family: Arial, sans-serif;
+}
+
+/* Small "DAY1" tag */
+.day-label {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 3px;
+}
+
+/* Top-left logo */
+.logo {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 10px;
+  background: white;
+  color: #003b71;
+  padding: 5px 10px;
+  border-radius: 2px;
+  text-align: left;
+  line-height: 1.2;
+}
+
+/* Inner big cards */
+.sub-card {
+  background: white;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 5px 10px;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.lma {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+}
+
+.p14 {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+}

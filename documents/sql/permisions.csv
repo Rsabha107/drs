@@ -1,0 +1,7 @@
+"id";"name";"guard_name";"group_name";"active_flag";"created_at";"updated_at"
+8;"setup.menu";"web";"setup";1;"2024-01-16 10:56:39";"2024-01-16 10:56:39"
+20;"manage.admin.users.menu";"web";"manage admin users";1;"2024-01-21 09:59:03";"2024-01-21 09:59:03"
+21;"roles.permissions.menu";"web";"roles permissions";1;"2024-01-21 09:59:26";"2024-01-21 09:59:26"
+54;"setup.admin.menu";"web";"setup";1;"2025-03-12 23:18:25";"2025-03-12 23:18:25"
+55;"setup.driver.menu";"web";"setup";1;"2025-03-12 23:18:39";"2025-03-12 23:18:39"
+56;"setup.vehicle.menu";"web";"setup";1;"2025-03-12 23:18:54";"2025-03-12 23:18:54"

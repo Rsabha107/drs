@@ -1,0 +1,49 @@
+div.dataTables_length {
+    float: left;
+    background-color: red;
+}
+
+div.dataTables_filter {
+    float: right;
+    background-color: green;
+}
+
+div.dataTables_info {
+    float: left;
+    background-color: blue;
+}
+
+div.dataTables_paginate {
+    float: right;
+    background-color: yellow;
+}
+
+div.dataTables_length,
+div.dataTables_filter,
+div.dataTables_paginate,
+div.dataTables_info {
+    padding: 6px;
+}
+
+/* dataTables Search input box */
+
+.dataTables_filter {
+    position: relative;
+}
+
+.dataTables_filter input {
+    width: 250px;
+    height: 32px;
+    background: #fcfcfc;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    box-shadow: 0 0 3px #ccc, 0 10px 15px #ebebeb inset;
+    text-indent: 10px;
+}
+
+.dataTables_filter .fa-search {
+    position: absolute;
+    top: 10px;
+    left: auto;
+    right: 10px;
+}

@@ -1,0 +1,50 @@
+/* .longname{
+    width:120px;
+    color: #0079c1;
+    height: 2em;
+    line-height: 1em;
+    font-size: 20px;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    margin-bottom: 12px;
+    cursor: pointer;
+    word-break: break-all;
+    overflow:hidden;
+    white-space: nowrap;
+}
+.longname:hover{
+    overflow: visible;
+    white-space: normal;
+    height:auto; /* just added this line */
+/* }  */
+
+.kanbanlongname{
+    text-overflow: ellipsis;
+    /* width: 160px; */
+    margin-bottom: 12px;
+    cursor: pointer;
+    /* word-break: break-all; */
+    overflow:hidden;
+    white-space: nowrap;
+}
+
+.kanbanlongname:hover{
+    /* overflow: visible; */
+    white-space: normal;
+    height:auto;
+}
+
+.longname{
+    text-overflow: ellipsis;
+    width: 120px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    /* word-break: break-all; */
+    overflow:hidden;
+    white-space: nowrap;
+}
+.longname:hover{
+    overflow: visible;
+    white-space: normal;
+    height:auto;
+}

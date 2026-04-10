@@ -1,0 +1,13 @@
+{
+    "nunito sans": {
+        "300": "C:\\xampp\\htdocs\\laravel\\mds\\storage\\fonts\/nunito_sans_300_aa36004e2e2488deaffe12114308649f",
+        "normal": "C:\\xampp\\htdocs\\laravel\\mds\\storage\\fonts\/nunito_sans_normal_0328b321c2bc04856cea72a702fd4f37",
+        "600": "C:\\xampp\\htdocs\\laravel\\mds\\storage\\fonts\/nunito_sans_600_2ee2f93ae3650615ce0ee9155d8a4aa0",
+        "bold": "C:\\xampp\\htdocs\\laravel\\mds\\storage\\fonts\/nunito_sans_bold_28ff67da00e6dc1987a71083194b317f",
+        "800": "nunito_sans_800_24b4f5f976244c2f65d5f66aba685b20",
+        "900": "C:\\xampp\\htdocs\\laravel\\mds\\storage\\fonts\/nunito_sans_900_2d79afa3f6b468670f4cd51637fb106c"
+    },
+    "unicons-line": {
+        "normal": "unicons_line_normal_9020f147afb21c713001142b0516444a"
+    }
+}

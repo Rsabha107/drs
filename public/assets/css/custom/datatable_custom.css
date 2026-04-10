@@ -1,0 +1,190 @@
+/* ===== Card ===== */
+.report-table-card {
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.report-table-card .card-header {
+    background: linear-gradient(to right, #ffffff, #f8fbff);
+}
+
+/* ===== Bootstrap Table wrapper ===== */
+.bootstrap-table .fixed-table-container {
+    border: 0 !important;
+    border-radius: 0;
+}
+
+/* .bootstrap-table .fixed-table-toolbar {
+    padding: 12px 16px 0 16px;
+} */
+
+.bootstrap-table .search input {
+    /* min-width: 260px; */
+    /* border-radius: 12px !important; */
+    border: 1px solid #d9dee7 !important;
+    background: #fff;
+    padding: 9px 14px !important;
+    box-shadow: none !important;
+    transition: all 0.2s ease;
+}
+
+.bootstrap-table .search input:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12) !important;
+}
+
+/* ===== Toolbar buttons ===== */
+.bootstrap-table .columns .btn,
+.bootstrap-table .btn[title],
+.bootstrap-table .btn-secondary {
+    /* border-radius: 10px !important; */
+    border: 1px solid #d9dee7 !important;
+    background: #f8fafc !important;
+    color: #344054 !important;
+    box-shadow: none !important;
+}
+
+.bootstrap-table .columns .btn:hover,
+.bootstrap-table .btn[title]:hover,
+.bootstrap-table .btn-secondary:hover {
+    background: #f8fafc !important;
+    border-color: #cfd6e4 !important;
+}
+
+/* ===== Table ===== */
+.bootstrap-table .table {
+    margin-bottom: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.ref-badge{
+    background:#eef2ff;
+    color:#4f46e5 !important;
+    border-radius:20px;
+    padding:6px 14px;
+    font-weight:600;
+    font-size:12px;
+}
+
+.bootstrap-table .table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc !important;
+    color: #545749 !important;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #e9edf3 !important;
+    padding: 14px 14px !important;
+    white-space: nowrap;
+}
+
+.bootstrap-table .table tbody td {
+    padding: 14px 14px !important;
+    vertical-align: middle !important;
+    border-top: 1px solid #f1f4f8 !important;
+    color: #344054;
+    font-size: 13px;
+    white-space: nowrap;
+    background: #fff;
+}
+
+.bootstrap-table .table tbody tr {
+    transition: all 0.18s ease;
+}
+
+.bootstrap-table .table tbody tr:hover td {
+    background: #fdfff9;
+}
+
+.bootstrap-table .table tbody tr:nth-child(even) td {
+    background: #fcfdff;
+}
+
+.bootstrap-table .table tbody tr:nth-child(even):hover td {
+    background: #f4f8ff;
+}
+
+/* ===== Scrollbar ===== */
+.fixed-table-body::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+}
+
+.fixed-table-body::-webkit-scrollbar-track {
+    background: #eef2f6;
+    border-radius: 20px;
+}
+
+.fixed-table-body::-webkit-scrollbar-thumb {
+    background: #b8c2d1;
+    border-radius: 20px;
+}
+
+.fixed-table-body::-webkit-scrollbar-thumb:hover {
+    background: #98a6ba;
+}
+
+/* ===== Pagination ===== */
+.bootstrap-table .fixed-table-pagination {
+    padding: 14px 16px;
+    border-top: 1px solid #edf1f5;
+    background: #fff;
+}
+
+.bootstrap-table .fixed-table-pagination .pagination-info,
+.bootstrap-table .fixed-table-pagination .page-list {
+    font-size: 13px;
+    color: #667085;
+}
+
+.bootstrap-table .pagination {
+    gap: 4px;
+}
+
+.bootstrap-table .pagination .page-item .page-link {
+    border-radius: 10px !important;
+    border: 1px solid #dde3ec;
+    color: #344054;
+    min-width: 36px;
+    text-align: center;
+}
+
+.bootstrap-table .pagination .page-item.active .page-link {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+
+/* ===== Empty state ===== */
+.bootstrap-table .no-records-found td {
+    padding: 30px !important;
+    color: #98a2b3;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+    .bootstrap-table .search input {
+        min-width: 180px;
+        /* width: 100% !important; */
+    }
+
+    .report-table-card .card-header {
+        align-items: flex-start !important;
+    }
+}
+
+.text-col-center {
+    text-align: center;
+}
+
+.text-col-right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}

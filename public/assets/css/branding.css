@@ -1,0 +1,6 @@
+    body {
+      background-image: url('/assets/img/background/P1-P2_1920x1080_pxl.png'); /* path to your background image */
+      background-size: cover; 
+      background-repeat: no-repeat;
+      background-position: top left;
+    }

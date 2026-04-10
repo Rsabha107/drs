@@ -1,0 +1,5 @@
+"id";"employee_id";"name";"username";"email";"email_verified_at";"password";"photo";"phone";"address";"role";"status";"remember_token";"usertype";"created_at";"updated_at";"is_admin"
+1;0;"Admin";"";"adminx@example.com";"";"$2y$12$ZnvfRs70vLrb4xHIoydJF.Dz94n.RWO6E3VN./Aajfm3pY1C/5Dsa";"avatar-3_1741557416.png";"5551112";"doha qatar";"admin";"1";"";"admin";"";"2025-03-12 12:05:13";1
+41;0;"User";"";"user@example.com";"";"$2y$12$.TpS6mZq7VTPVF7iWqYkM.Msx/WdH47G3CVpLQlX7k/2w4juBIFeK";"";"33333333";"doha";"user";"1";"";"user";"2025-03-06 20:50:42";"2025-03-12 07:06:41";0
+42;0;"Catering";"";"catering@example.com";"";"$2y$12$zqDq/5D1I.1JkSSMvhHSze800gQnKr7sajxXQP.RQHrrvWhgI2aUO";"";"22334433";"doha";"user";"1";"";"user";"2025-03-12 07:00:20";"2025-03-12 07:00:20";0
+43;0;"Functional Area";"";"fa@example.com";"";"$2y$12$/Ihx6bUsZzQRNlPw95plpeJ6Z.jFc8i1s0rfEf7H6oMuUA8X3Q9e6";"";"3344334433";"doha";"user";"1";"";"user";"2025-03-12 07:07:50";"2025-03-12 07:07:50";0
