@@ -15,6 +15,7 @@ use App\Http\Controllers\Drs\Admin\UserController as AdminUserController;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Drs\Setting\VenueController;
+use App\Http\Controllers\Drs\Setting\FunctionalAreaController;
 use App\Http\Controllers\UtilController;
 use App\Http\Controllers\Drs\Auth\AdminController as VmsAuthAdminController;
 use App\Http\Controllers\Drs\Admin\DashboardController;
@@ -125,6 +126,16 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::post('/drs/setting/match/store', 'store')->name('drs.setting.match.store');
     });
 
+    // Functional Area
+    Route::controller(FunctionalAreaController::class)->group(function () {
+        Route::get('/drs/setting/functional_area', 'index')->name('drs.setting.functional_area');
+        Route::get('/drs/setting/functional_area/list', 'list')->name('drs.setting.functional_area.list');
+        Route::get('/drs/setting/functional_area/get/{id}', 'get')->name('drs.setting.functional_area.get');
+        Route::post('/drs/setting/functional_area/update', 'update')->name('drs.setting.functional_area.update');
+        Route::delete('/drs/setting/functional_area/delete/{id}', 'delete')->name('drs.setting.functional_area.delete');
+        Route::post('/drs/setting/functional_area/store', 'store')->name('drs.setting.functional_area.store');
+    });
+
     // Venue
     Route::controller(VenueController::class)->group(function () {
         Route::get('/drs/setting/venue', 'index')->name('drs.setting.venue');
@@ -207,10 +218,11 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::get('/drs/drs/create',                   'create')->name('drs.drs.create');
         Route::post('/drs/drs/store',                   'store')->name('drs.drs.store');
         Route::get('/drs/drs/{id}/get',                 'get')->name('drs.drs.get');
+        Route::get('/drs/venue/{id}/matches',           'matchesByVenue')->name('drs.venue.matches');
         Route::get('/drs/drs/{id}',                     'show')->name('drs.drs.show');
         Route::get('/drs/drs/{id}/edit',                'edit')->name('drs.drs.edit');
         Route::post('/drs/drs/update',                  'update')->name('drs.drs.update');
-        Route::delete('/drs/drs/{id}',                  'destroy')->name('drs.drs.destroy');
+        Route::delete('/drs/drs/destroy/{id}',          'destroy')->name('drs.drs.destroy');
         Route::get('/drs/drs/{id}/export',              'export')->name('drs.drs.export');
         // Items
         Route::get('/drs/drs/{runSheetId}/items/create', 'itemCreate')->name('drs.drs.item.create');
@@ -226,14 +238,14 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::post('/drs/shared/store', 'store')->name('drs.report.store');
         Route::get('/drs/shared/edit/{id}', 'edit')->name('drs.report.edit');
         Route::post('/drs/shared/update', 'update')->name('drs.report.update');
-        Route::delete('/drs/shared/delete/{id}', 'destroy')->name('drs.report.destroy');
+        // Route::delete('/drs/shared/delete/{id}', 'destroy')->name('drs.report.destroy');
         Route::get('/drs/shared/gallery/{id}', 'gallery')->name('drs.report.gallery');
         Route::get('/drs/shared/pdf/{id}', 'reportPdf')->name('drs.report.pdf');
         // export issue log excel
         Route::get('/issue-logs/export/{id}', 'export')->name('issue-logs.export');
         Route::post('/reports/voc/import', 'importAjax')->name('reports.voc.import');
         Route::get('/reports/voc/preview', 'preview')->name('reports.voc.preview');
-        Route::delete('/reports/voc/clear', 'clear')->name('reports.voc.clear');
+        // Route::delete('/reports/voc/clear', 'clear')->name('reports.voc.clear');
 
         // get matches by venue for dynamic dropdown in create/edit form
         Route::get('/ajax/matches-by-venue/{venue}', 'getByVenue')->name('ajax.matches.byVenue');

@@ -43,6 +43,11 @@ class DailyRunSheet extends Model
         return $this->belongsTo(EventMatch::class, 'match_id');
     }
 
+    public function functionalArea()
+    {
+        return $this->belongsTo(FunctionalArea::class, 'functional_area_id');
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

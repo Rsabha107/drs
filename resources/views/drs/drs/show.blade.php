@@ -158,7 +158,7 @@ $calcCountdown = function($startTime) use ($koFormatted) {
                         <th data-field="id" data-sortable="true" data-visible="false">ID</th>
                         <th data-field="title" data-sortable="true">Title</th>
                         <th data-field="start_time" data-sortable="false">Start Time</th>
-                        <th data-field="ko_offset" data-sortable="true">KO Offset</th>
+                        <th data-field="countdown_to_ko" data-sortable="true">Countdown</th>
                         <th data-field="end_time" data-sortable="true">End Time</th>
                         <th data-field="functional_area" data-sortable="true">Functional Area</th>
                         <th data-field="location" data-sortable="false">Location</th>
@@ -213,8 +213,8 @@ $calcCountdown = function($startTime) use ($koFormatted) {
                                     <span class="text-muted fw-normal">(KO {{ $koFormatted }})</span>
                                 @endif
                             </label>
-                            <input type="text" id="add_ko_offset" class="form-control font-monospace"
-                                   placeholder="{{ $koFormatted ? 'e.g. KO-5h, KO+30m' : 'No KO set' }}"
+                            <input type="text" id="add_countdown_to_ko" class="form-control font-monospace"
+                                   name="countdown_to_ko" placeholder="{{ $koFormatted ? 'e.g. KO-5h, KO+30m' : 'No KO set' }}"
                                    {{ $koFormatted ? '' : 'disabled' }}>
                         </div>
                         <div class="col-md-4">
@@ -289,13 +289,13 @@ $calcCountdown = function($startTime) use ($koFormatted) {
                             <input type="time" name="start_time" id="edit_item_start_time" class="form-control">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">KO Offset
+                            <label class="form-label">Countdown
                                 @if($koFormatted)
                                     <span class="text-muted fw-normal">(KO {{ $koFormatted }})</span>
                                 @endif
                             </label>
-                            <input type="text" id="edit_ko_offset" class="form-control font-monospace"
-                                   placeholder="{{ $koFormatted ? 'e.g. KO-5h, KO+30m' : 'No KO set' }}"
+                            <input type="text" id="edit_countdown_to_ko" class="form-control font-monospace"
+                                   name="countdown_to_ko" placeholder="{{ $koFormatted ? 'e.g. KO-5h, KO+30m' : 'No KO set' }}"
                                    {{ $koFormatted ? '' : 'disabled' }}>
                         </div>
                         <div class="col-md-4">
@@ -520,10 +520,10 @@ updateAddPreview();
 
 // Bidirectional: start time ↔ KO offset (Add modal)
 $('#add_start_time').on('change', function () {
-    $('#add_ko_offset').val(calcKoOffset($(this).val()));
+    $('#add_countdown_to_ko').val(calcKoOffset($(this).val()));
 });
 
-$('#add_ko_offset').on('blur', function () {
+$('#add_countdown_to_ko').on('blur', function () {
     var t = parseKoOffset($(this).val());
     if (t) {
         $('#add_start_time').val(t);
@@ -538,7 +538,7 @@ $('#add_ko_offset').on('blur', function () {
 $('#add_item_modal').on('hidden.bs.modal', function () {
     $('#add_item_form')[0].reset();
     $('#add_item_form').removeClass('was-validated');
-    $('#add_ko_offset').val('').removeClass('is-invalid');
+    $('#add_countdown_to_ko').val('').removeClass('is-invalid');
     updateAddPreview();
 });
 
@@ -571,6 +571,7 @@ $('#add_item_form').on('submit', function (e) {
                 title:           item.title,
                 start_time:      item.start_time,
                 end_time:        item.end_time,
+                countdown_to_ko: item.countdown_to_ko,
                 functional_area: item.functional_area,
                 location:        item.location,
                 description:     item.description,
@@ -604,10 +605,10 @@ $('#edit_row_color_select').on('change', updateEditItemPreview);
 
 // Bidirectional: start time ↔ KO offset (Edit modal)
 $('#edit_item_start_time').on('change', function () {
-    $('#edit_ko_offset').val(calcKoOffset($(this).val()));
+    $('#edit_countdown_to_ko').val(calcKoOffset($(this).val()));
 });
 
-$('#edit_ko_offset').on('blur', function () {
+$('#edit_countdown_to_ko').on('blur', function () {
     var t = parseKoOffset($(this).val());
     if (t) {
         $('#edit_item_start_time').val(t);
@@ -621,7 +622,7 @@ $('#edit_ko_offset').on('blur', function () {
 
 $('#edit_item_modal').on('hidden.bs.modal', function () {
     $('#edit_item_form').removeClass('was-validated');
-    $('#edit_ko_offset').val('').removeClass('is-invalid');
+    $('#edit_countdown_to_ko').val('').removeClass('is-invalid');
 });
 
 $('body').on('click', '.item-edit', function () {
@@ -638,7 +639,7 @@ $('body').on('click', '.item-edit', function () {
             $('#edit_item_id').val(data.id);
             $('#edit_item_title').val(data.title);
             $('#edit_item_start_time').val(data.start_time);
-            $('#edit_ko_offset').val(calcKoOffset(data.start_time)).removeClass('is-invalid');
+            $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass('is-invalid');
             $('#edit_item_end_time').val(data.end_time);
             $('#edit_item_functional_area').val(data.functional_area);
             $('#edit_item_location').val(data.location);
@@ -688,6 +689,7 @@ $('#edit_item_form').on('submit', function (e) {
                     title:           item.title,
                     start_time:      item.start_time,
                     end_time:        item.end_time,
+                    countdown_to_ko: item.countdown_to_ko,
                     functional_area: item.functional_area,
                     location:        item.location,
                     description:     item.description,
@@ -703,6 +705,7 @@ $('#edit_item_form').on('submit', function (e) {
         },
         complete: function () {
             $btn.html(originalHtml).prop('disabled', false);
+            $('#items_table').bootstrapTable('refresh');
         }
     });
 });
@@ -728,6 +731,7 @@ $('body').on('click', '.item-delete', function () {
                 if (res.error) { toastr.error(res.message); return; }
                 toastr.success(res.message);
                 $('#items_table').bootstrapTable('removeByUniqueId', id);
+                $('#items_table').bootstrapTable('refresh');
             },
             error: function () { toastr.error('Could not delete item.'); }
         });

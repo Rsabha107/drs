@@ -1,10 +1,10 @@
 {{-- Shared fields partial for create & edit modals.
-     Requires: $prefix ('create' or 'edit'), $event, $matches
+     Requires: $prefix ('create' or 'edit'), $event
 --}}
 <div class="row g-3">
     <div class="col-md-6">
         <label class="form-label">Venue <span class="text-danger">*</span></label>
-        <select name="venue_id" class="form-select" required>
+        <select id="{{ $prefix }}_drs_venue_id" name="venue_id" class="form-select" required>
             <option value="">Select venue</option>
             @foreach($event->venues as $v)
                 <option value="{{ $v->id }}">{{ $v->short_name }} &mdash; {{ $v->title }}</option>
@@ -32,10 +32,17 @@
 
     <div class="col-md-6">
         <label class="form-label">Match <span class="text-muted small">(optional)</span></label>
-        <select name="match_id" class="form-select">
+        <select id="{{ $prefix }}_drs_match_id" name="match_id" class="form-select" disabled>
+            <option value="">— select a venue first —</option>
+        </select>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label">Functional Area <span class="text-muted small">(optional)</span></label>
+        <select id="{{ $prefix }}_drs_functional_area_id" name="functional_area_id" class="form-select">
             <option value="">N/A</option>
-            @foreach($matches as $m)
-                <option value="{{ $m->id }}">M{{ $m->match_number }} &mdash; {{ $m->match_date }}</option>
+            @foreach($functionalAreas ?? [] as $fa)
+                <option value="{{ $fa->id }}">{{ $fa->fa_code }} &mdash; {{ $fa->title }}</option>
             @endforeach
         </select>
     </div>

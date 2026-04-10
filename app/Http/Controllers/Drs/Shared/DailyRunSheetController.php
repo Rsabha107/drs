@@ -8,6 +8,7 @@ use App\Models\Drs\DailyRunSheet;
 use App\Models\Drs\DailyRunSheetItem;
 use App\Models\Drs\Event;
 use App\Models\Drs\EventMatch;
+use App\Models\Drs\FunctionalArea;
 use App\Models\Drs\Venue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,8 +22,9 @@ class DailyRunSheetController extends Controller
     {
         $event = Event::findOrFail(session()->get('EVENT_ID'));
         $matches = EventMatch::where('event_id', $event->id)->orderBy('match_date')->get();
+        $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
 
-        return view('drs.drs.list', compact('event', 'matches'));
+        return view('drs.drs.list', compact('event', 'matches', 'functionalAreas'));
     }
 
     public function list(Request $request)
@@ -39,7 +41,7 @@ class DailyRunSheetController extends Controller
             $sort = 'run_date';
         }
 
-        $query = DailyRunSheet::with(['venue', 'match'])
+        $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
             ->where('event_id', $eventId);
 
         if ($request->filled('venue_id')) {
@@ -47,6 +49,9 @@ class DailyRunSheetController extends Controller
         }
         if ($request->filled('sheet_type')) {
             $query->where('sheet_type', $request->sheet_type);
+        }
+        if ($request->filled('functional_area_id')) {
+            $query->where('functional_area_id', $request->functional_area_id);
         }
         if ($request->filled('search')) {
             $s = $request->search;
@@ -60,13 +65,14 @@ class DailyRunSheetController extends Controller
         $total = $query->count();
         $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($s) {
             return [
-                'id'            => $s->id,
-                'sheet_type'    => '<span class="badge bg-primary">' . e($s->sheet_type) . '</span>',
-                'venue'         => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
-                'run_date'      => '<span class="fs-9">' . e($s->run_date_dmy) . '</span>',
-                'gates_opening' => '<span class="fs-9">' . ($s->gates_opening ? \Carbon\Carbon::parse($s->gates_opening)->format('H:i') : '-') . '</span>',
-                'kick_off'      => '<span class="fs-9">' . ($s->kick_off ? \Carbon\Carbon::parse($s->kick_off)->format('H:i') : '-') . '</span>',
-                'items_count'   => '<span class="badge bg-secondary">' . $s->items()->count() . '</span>',
+                'id'               => $s->id,
+                'sheet_type'       => '<span class="badge bg-primary">' . e($s->sheet_type) . '</span>',
+                'venue'            => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
+                'functional_area'  => '<span class="fs-9">' . e($s->functionalArea?->title ?? '-') . '</span>',
+                'run_date'         => '<span class="fs-9">' . e($s->run_date_dmy) . '</span>',
+                'gates_opening'    => '<span class="fs-9">' . ($s->gates_opening ? \Carbon\Carbon::parse($s->gates_opening)->format('H:i') : '-') . '</span>',
+                'kick_off'         => '<span class="fs-9">' . ($s->kick_off ? \Carbon\Carbon::parse($s->kick_off)->format('H:i') : '-') . '</span>',
+                'items_count'      => '<span class="badge bg-secondary">' . $s->items()->count() . '</span>',
             ];
         });
 
@@ -88,12 +94,13 @@ class DailyRunSheetController extends Controller
     public function store(Request $request)
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'venue_id'      => 'required|integer',
-            'sheet_type'    => 'required|string|max:50',
-            'run_date'      => 'required|date',
-            'gates_opening' => 'nullable|date_format:H:i',
-            'kick_off'      => 'nullable|date_format:H:i',
-            'match_id'      => 'nullable|integer',
+            'venue_id'           => 'required|integer',
+            'sheet_type'         => 'required|string|max:50',
+            'run_date'           => 'required|date',
+            'gates_opening'      => 'nullable|date_format:H:i',
+            'kick_off'           => 'nullable|date_format:H:i',
+            'match_id'           => 'nullable|integer',
+            'functional_area_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -104,14 +111,15 @@ class DailyRunSheetController extends Controller
         }
 
         $sheet = DailyRunSheet::create([
-            'event_id'      => session()->get('EVENT_ID'),
-            'venue_id'      => $request->venue_id,
-            'match_id'      => $request->match_id ?: null,
-            'sheet_type'    => $request->sheet_type,
-            'run_date'      => $request->run_date,
-            'gates_opening' => $request->gates_opening ?: null,
-            'kick_off'      => $request->kick_off ?: null,
-            'created_by'    => Auth::id(),
+            'event_id'           => session()->get('EVENT_ID'),
+            'venue_id'           => $request->venue_id,
+            'match_id'           => $request->match_id ?: null,
+            'functional_area_id' => $request->functional_area_id ?: null,
+            'sheet_type'         => $request->sheet_type,
+            'run_date'           => $request->run_date,
+            'gates_opening'      => $request->gates_opening ?: null,
+            'kick_off'           => $request->kick_off ?: null,
+            'created_by'         => Auth::id(),
         ]);
 
         return response()->json([
@@ -144,7 +152,7 @@ class DailyRunSheetController extends Controller
         }
 
         $query = DailyRunSheetItem::where('run_sheet_id', $id);
-            // ->where('event_id', $eventId);
+        // ->where('event_id', $eventId);
 
 
         if ($request->filled('search')) {
@@ -162,9 +170,9 @@ class DailyRunSheetController extends Controller
                 'id'            => $s->id,
                 'title'    => '<span class="fs-9 ps-3">' . e($s->title) . '</span>',
                 'start_time'         => '<span class="fs-9">' . e($s->start_time ?? '-') . '</span>',
-                'ko_offset'      => '<span class="fs-9">' . e($s->ko_offset_dmy) . '</span>',
+                'countdown_to_ko'      => '<span class="fs-9">' . e($s->countdown_to_ko) . '</span>',
                 'end_time' => '<span class="fs-9">' . e($s->end_time ?? '-') . '</span>',
-                'functional_area' => '<span class="fs-9">' . e($s->functional_area ?? '-') . '</span>',
+                'functional_area' => '<span class="fs-9">' . e($s->runSheet->functionalArea->title ?? '-') . '</span>',
                 'location' => '<span class="fs-9">' . e($s->location ?? '-') . '</span>',
                 'description' => '<span class="fs-9">' . e($s->description ?? '-') . '</span>',
             ];
@@ -181,26 +189,28 @@ class DailyRunSheetController extends Controller
         $sheet = DailyRunSheet::findOrFail($id);
 
         return response()->json([
-            'id'            => $sheet->id,
-            'venue_id'      => $sheet->venue_id,
-            'match_id'      => $sheet->match_id,
-            'sheet_type'    => $sheet->sheet_type,
-            'run_date'      => $sheet->run_date,
-            'gates_opening' => $sheet->gates_opening ? Carbon::parse($sheet->gates_opening)->format('H:i') : '',
-            'kick_off'      => $sheet->kick_off ? Carbon::parse($sheet->kick_off)->format('H:i') : '',
+            'id'                 => $sheet->id,
+            'venue_id'           => $sheet->venue_id,
+            'match_id'           => $sheet->match_id,
+            'functional_area_id' => $sheet->functional_area_id,
+            'sheet_type'         => $sheet->sheet_type,
+            'run_date'           => $sheet->run_date,
+            'gates_opening'      => $sheet->gates_opening ? Carbon::parse($sheet->gates_opening)->format('H:i') : '',
+            'kick_off'           => $sheet->kick_off ? Carbon::parse($sheet->kick_off)->format('H:i') : '',
         ]);
     }
 
     public function update(Request $request)
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'id'            => 'required|integer|exists:daily_run_sheets,id',
-            'venue_id'      => 'required|integer',
-            'sheet_type'    => 'required|string|max:50',
-            'run_date'      => 'required|date',
-            'gates_opening' => 'nullable|date_format:H:i',
-            'kick_off'      => 'nullable|date_format:H:i',
-            'match_id'      => 'nullable|integer',
+            'id'                 => 'required|integer|exists:daily_run_sheets,id',
+            'venue_id'           => 'required|integer',
+            'sheet_type'         => 'required|string|max:50',
+            'run_date'           => 'required|date',
+            'gates_opening'      => 'nullable|date_format:H:i',
+            'kick_off'           => 'nullable|date_format:H:i',
+            'match_id'           => 'nullable|integer',
+            'functional_area_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -212,12 +222,13 @@ class DailyRunSheetController extends Controller
 
         $sheet = DailyRunSheet::findOrFail($request->id);
         $sheet->update([
-            'venue_id'      => $request->venue_id,
-            'match_id'      => $request->match_id ?: null,
-            'sheet_type'    => $request->sheet_type,
-            'run_date'      => $request->run_date,
-            'gates_opening' => $request->gates_opening ?: null,
-            'kick_off'      => $request->kick_off ?: null,
+            'venue_id'           => $request->venue_id,
+            'match_id'           => $request->match_id ?: null,
+            'functional_area_id' => $request->functional_area_id ?: null,
+            'sheet_type'         => $request->sheet_type,
+            'run_date'           => $request->run_date,
+            'gates_opening'      => $request->gates_opening ?: null,
+            'kick_off'           => $request->kick_off ?: null,
         ]);
 
         return response()->json([
@@ -229,6 +240,10 @@ class DailyRunSheetController extends Controller
     public function destroy($id)
     {
         DailyRunSheet::findOrFail($id)->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json(['error' => false, 'message' => 'Item deleted.']);
+        }
 
         return redirect()->route('drs.drs.index')
             ->with('message', 'Daily Run Sheet deleted.')
@@ -255,6 +270,7 @@ class DailyRunSheetController extends Controller
             'description'     => 'nullable|string',
             'row_color'       => 'required|in:default,red,yellow,green',
             'sort_order'      => 'nullable|integer',
+            'countdown_to_ko'  => 'nullable|string',
         ]);
 
         $item = DailyRunSheetItem::create($request->only([
@@ -267,6 +283,7 @@ class DailyRunSheetController extends Controller
             'description',
             'row_color',
             'sort_order',
+            'countdown_to_ko',
         ]));
 
         if ($request->expectsJson()) {
@@ -278,6 +295,7 @@ class DailyRunSheetController extends Controller
                     'title'           => $item->title,
                     'start_time'      => $item->start_time ? Carbon::parse($item->start_time)->format('H:i') : '',
                     'end_time'        => $item->end_time ? Carbon::parse($item->end_time)->format('H:i') : '',
+                    'countdown_to_ko' => $item->countdown_to_ko ?? '',
                     'functional_area' => $item->functional_area ?? '',
                     'location'        => $item->location ?? '',
                     'description'     => $item->description ?? '',
@@ -329,6 +347,7 @@ class DailyRunSheetController extends Controller
             'description'     => 'nullable|string',
             'row_color'       => 'required|in:default,red,yellow,green',
             'sort_order'      => 'nullable|integer',
+            'countdown_to_ko' => 'nullable|string',
         ]);
 
         $item = DailyRunSheetItem::findOrFail($request->id);
@@ -341,6 +360,7 @@ class DailyRunSheetController extends Controller
             'description',
             'row_color',
             'sort_order',
+            'countdown_to_ko',
         ]));
 
         if ($request->expectsJson()) {
@@ -356,6 +376,7 @@ class DailyRunSheetController extends Controller
                     'location'        => $item->location ?? '',
                     'description'     => $item->description ?? '',
                     'row_color'       => $item->row_color,
+                    'countdown_to_ko' => $item->countdown_to_ko,
                 ],
             ]);
         }
@@ -378,6 +399,19 @@ class DailyRunSheetController extends Controller
         return redirect()->route('drs.drs.show', $sheetId)
             ->with('message', 'Item deleted.')
             ->with('alert-type', 'success');
+    }
+
+    // ── Matches by Venue ─────────────────────────────────────────────────────
+
+    public function matchesByVenue($venueId)
+    {
+        $eventId = session()->get('EVENT_ID');
+        $matches = EventMatch::where('event_id', $eventId)
+            ->where('venue_id', $venueId)
+            ->orderBy('match_date')
+            ->get(['id', 'match_number', 'match_date']);
+
+        return response()->json($matches);
     }
 
     // ── Export ───────────────────────────────────────────────────────────────

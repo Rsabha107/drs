@@ -21,6 +21,12 @@
                 <option>{{ $t }}</option>
             @endforeach
         </select>
+        <select id="filter_functional_area" class="form-select form-select-sm" style="width:160px;">
+            <option value="">All Func. Areas</option>
+            @foreach($functionalAreas ?? [] as $fa)
+                <option value="{{ $fa->id }}">{{ $fa->fa_code }}</option>
+            @endforeach
+        </select>
         <button type="button" class="btn btn-subtle-primary px-3"
                 data-bs-toggle="modal" data-bs-target="#create_drs_modal">
             <i class="fa-solid fa-plus me-1"></i>New Run Sheet
@@ -61,6 +67,7 @@
                         <th data-field="id" data-sortable="true" data-visible="false">ID</th>
                         <th data-field="sheet_type" data-sortable="true">Sheet Type</th>
                         <th data-field="venue" data-sortable="false">Venue</th>
+                        <th data-field="functional_area" data-sortable="false">Func. Area</th>
                         <th data-field="run_date" data-sortable="true">Date</th>
                         <th data-field="gates_opening" data-sortable="true">Gates Opening</th>
                         <th data-field="kick_off" data-sortable="true">Kick-Off</th>
@@ -144,14 +151,15 @@ function loadingTemplate() {
 
 function queryParams(p) {
     return {
-        page:       p.offset / p.limit + 1,
-        limit:      p.limit,
-        sort:       p.sort,
-        order:      p.order,
-        offset:     p.offset,
-        search:     p.search,
-        venue_id:   $('#filter_venue').val(),
-        sheet_type: $('#filter_type').val(),
+        page:               p.offset / p.limit + 1,
+        limit:              p.limit,
+        sort:               p.sort,
+        order:              p.order,
+        offset:             p.offset,
+        search:             p.search,
+        venue_id:           $('#filter_venue').val(),
+        sheet_type:         $('#filter_type').val(),
+        functional_area_id: $('#filter_functional_area').val(),
     };
 }
 
@@ -172,12 +180,61 @@ function drsActionsFormatter(value, row) {
 $(document).ready(function () {
 
     // ── Filters ────────────────────────────────────────────────
-    $('#filter_venue, #filter_type').on('change', function () {
+    $('#filter_venue, #filter_type, #filter_functional_area').on('change', function () {
         $('#drs_table').bootstrapTable('refresh');
+    });
+
+    // ── Dependent match select ──────────────────────────────────
+    function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId) {
+        var venueId = $venueSelect.val();
+        $matchSelect.empty().append('<option value="">N/A</option>').prop('disabled', true);
+
+        if (!venueId) {
+            $matchSelect.append('<option value="" disabled selected>— select a venue first —</option>');
+            return;
+        }
+
+        $matchSelect.append('<option value="" disabled selected>Loading…</option>');
+
+        $.ajax({
+            url: '/drs/venue/' + venueId + '/matches',
+            type: 'GET',
+            dataType: 'json',
+            success: function (matches) {
+                $matchSelect.empty().append('<option value="">N/A</option>');
+                $.each(matches, function (i, m) {
+                    var label = 'M' + m.match_number + ' — ' + m.match_date;
+                    var selected = (selectedMatchId && m.id == selectedMatchId) ? ' selected' : '';
+                    $matchSelect.append('<option value="' + m.id + '"' + selected + '>' + label + '</option>');
+                });
+                $matchSelect.prop('disabled', false);
+            },
+            error: function () {
+                $matchSelect.empty().append('<option value="">— could not load matches —</option>');
+            }
+        });
+    }
+
+    // Venue change in create modal
+    $('#create_drs_venue_id').on('change', function () {
+        loadDrsMatches($(this), $('#create_drs_match_id'), null);
+    });
+
+    // Venue change in edit modal
+    $('#edit_drs_venue_id').on('change', function () {
+        loadDrsMatches($(this), $('#edit_drs_match_id'), null);
+    });
+
+    // Reset match select when create modal closes
+    $('#create_drs_modal').on('hidden.bs.modal', function () {
+        $('#create_drs_match_id').empty()
+            .append('<option value="">— select a venue first —</option>')
+            .prop('disabled', true);
     });
 
     // ── Delete ─────────────────────────────────────────────────
     $('body').on('click', '.drs-delete', function () {
+        console.log('Delete button clicked');
         var id = $(this).data('id');
         Swal.fire({
             title: 'Delete this run sheet?',
@@ -189,14 +246,16 @@ $(document).ready(function () {
         }).then(function (result) {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/drs/drs/' + id,
+                    url: '/drs/drs/destroy/' + id,
                     type: 'DELETE',
                     data: { _token: '{{ csrf_token() }}' },
                     success: function () {
+                        console.log('Delete successful');
                         toastr.success('Run sheet deleted.');
                         $('#drs_table').bootstrapTable('refresh');
                     },
                     error: function () {
+                        console.log('Delete failed');
                         toastr.error('Could not delete. Please try again.');
                     }
                 });
@@ -216,13 +275,19 @@ $(document).ready(function () {
             dataType: 'json',
             success: function (data) {
                 $('#edit_drs_id').val(data.id);
-                $('#edit_drs_form [name="venue_id"]').val(data.venue_id);
                 $('#edit_drs_form [name="sheet_type"]').val(data.sheet_type);
                 $('#edit_drs_form [name="run_date"]').val(data.run_date);
-                $('#edit_drs_form [name="match_id"]').val(data.match_id || '');
                 $('#edit_drs_form [name="gates_opening"]').val(data.gates_opening);
                 $('#edit_drs_form [name="kick_off"]').val(data.kick_off);
                 $('#edit_drs_form').removeClass('was-validated');
+
+                // Set venue then load dependent matches with current match preselected
+                $('#edit_drs_venue_id').val(data.venue_id);
+                loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'), data.match_id);
+
+                // Set functional area
+                $('#edit_drs_functional_area_id').val(data.functional_area_id || '');
+
                 $('#edit_drs_modal').modal('show');
             },
             error: function () {

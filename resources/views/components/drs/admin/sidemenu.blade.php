@@ -88,6 +88,14 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ Request::is('drs/setting/functional_area') ? 'active' : '' }}"
+                            href="{{ route('drs.setting.functional_area') }}">
+                            <div class="d-flex align-items-center">
+                                <span class="nav-link-text">Functional Area</span>
+                            </div>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ Request::is('drs/setting/match') ? 'active' : '' }}"
                             href="{{ route('drs.setting.match') }}">
                             <div class="d-flex align-items-center">
