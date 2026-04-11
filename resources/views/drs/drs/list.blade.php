@@ -30,8 +30,11 @@
                 data-bs-target="#create_drs_modal">
                 <i class="fa-solid fa-plus me-1"></i>New Run Sheet
             </button>
-            <a href="{{ route('drs.admin.show') }}" class="btn btn-success">
+            <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
                 <i class="fa-solid fa-eye me-1"></i>Admin View
+            </a>
+            <a href="{{ route('drs.admin.flat.list') }}" class="btn btn-success">
+                <i class="fa-solid fa-eye me-1"></i>Combined List View
             </a>
         </div>
     </div>

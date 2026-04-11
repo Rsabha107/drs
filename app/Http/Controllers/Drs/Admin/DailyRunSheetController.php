@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Drs\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Drs\DailyRunSheet;
-use App\Models\Drs\DailyRunSheetItem;
 use App\Models\Drs\Event;
+use App\Models\Drs\EventMatch;
+use App\Models\Drs\FunctionalArea;
+use App\Models\Drs\Venue;
 use Illuminate\Http\Request;
 
 class DailyRunSheetController extends Controller
@@ -13,7 +15,9 @@ class DailyRunSheetController extends Controller
     public function index()
     {
         $event = Event::findOrFail(session()->get('EVENT_ID'));
-        return view('drs.drs.list', compact('event'));
+        $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
+
+        return view('drs.drs.list', compact('event', 'functionalAreas'));
     }
 
     public function list(Request $request)
@@ -22,58 +26,80 @@ class DailyRunSheetController extends Controller
         return app(\App\Http\Controllers\Drs\Shared\DailyRunSheetController::class)->list($request);
     }
 
-    public function show()
-    {
-        $sheet = DailyRunSheet::with(['event', 'venue', 'match', 'items'])->where('event_id', session()->get('EVENT_ID'))->get();
-        return view('drs.admin.report.admin-show', compact('sheet'));
-    }
 
-
-    public function showAdminList(Request $request)
+    public function venueMatchView()
     {
         $eventId = session()->get('EVENT_ID');
+        $event   = Event::findOrFail($eventId);
 
-        $sort  = $request->input('sort', 'start_time');
-        $order = $request->input('order', 'desc');
-        $limit = max(1, min((int) $request->input('limit', 20), 200));
+        // Load all run sheets for the event with their relationships and items
+        $sheets = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'items'])
+            ->where('event_id', $eventId)
+            ->orderBy('venue_id')
+            ->orderBy('match_id')
+            ->orderBy('sheet_type')
+            ->get();
 
-
-        $allowedSorts = ['id', 'sheet_type', 'run_date', 'gates_opening', 'kick_off', 'start_time'];
-        if (!in_array($sort, $allowedSorts)) {
-            $sort = 'start_time';
-        }
-
-        $query = DailyRunSheetItem::where('run_sheet_id', $id);
-        // ->where('event_id', $eventId);
-
-
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('sheet_type', 'like', "%{$s}%")
-                    ->orWhere('run_date', 'like', "%{$s}%")
-                    ->orWhereHas('venue', fn($q2) => $q2->where('short_name', 'like', "%{$s}%"));
-            });
-        }
-
-        $total = $query->count();
-        $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($s) {
-            return [
-                'id'            => $s->id,
-                'title'    => '<span class="fs-9 ps-3">' . e($s->title) . '</span>',
-                'start_time'         => '<span class="fs-9">' . e($s->start_time ?? '-') . '</span>',
-                'countdown_to_ko'      => '<span class="fs-9">' . e($s->countdown_to_ko) . '</span>',
-                'end_time' => '<span class="fs-9">' . e($s->end_time ?? '-') . '</span>',
-                'functional_area' => '<span class="fs-9">' . e($s->runSheet->functionalArea->title ?? '-') . '</span>',
-                'location' => '<span class="fs-9">' . e($s->location ?? '-') . '</span>',
-                'description' => '<span class="fs-9">' . e($s->description ?? '-') . '</span>',
-            ];
+        // Group: venue → match_id → sheets
+        $grouped = $sheets->groupBy('venue_id')->map(function ($venueSheets) {
+            return $venueSheets->groupBy('match_id');
         });
 
-        return response()->json([
-            'total' => $total,
-            'rows'  => $rows->items(),
-        ]);
+        return view('drs.admin.report.venue-match', compact('event', 'grouped'));
+    }
+
+    public function flatListView(Request $request)
+    {
+        $eventId = session()->get('EVENT_ID');
+        $event   = Event::findOrFail($eventId);
+
+        // Only venues that have run sheets for this event
+        $venues = Venue::whereHas('matches', function ($q) use ($eventId) {
+            $q->where('event_id', $eventId);
+        })->orderBy('short_name')->get();
+
+        $venueId = $request->input('venue_id');
+        $matchId = $request->input('match_id');
+
+        $matches     = collect();
+        $matchHeader = null;
+        $items       = collect();
+
+        if ($venueId) {
+            $matches = EventMatch::where('event_id', $eventId)
+                ->where('venue_id', $venueId)
+                ->orderBy('match_date')
+                ->get();
+        }
+
+        $sheets = collect();
+
+        if ($venueId && $matchId) {
+            $sheets = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'items'])
+                ->where('event_id', $eventId)
+                ->where('venue_id', $venueId)
+                ->where('match_id', $matchId)
+                ->get();
+
+            $firstSheet = $sheets->first();
+            if ($firstSheet) {
+                $matchHeader = $firstSheet;
+            }
+
+            // Flatten all items from all sheets, attach parent sheet for FA/KO context
+            $items = $sheets->flatMap(function ($sheet) {
+                return $sheet->items->map(function ($item) use ($sheet) {
+                    $item->_parentSheet = $sheet;
+                    return $item;
+                });
+            })->sortBy(function ($item) {
+                return $item->start_time ?? '99:99';
+            })->values();
+        }
+
+        return view('drs.admin.report.flat-list', compact(
+            'event', 'venues', 'matches', 'matchHeader', 'items', 'venueId', 'matchId', 'sheets'
+        ));
     }
 
     public function switch($id)
