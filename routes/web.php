@@ -197,7 +197,9 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
 Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmin', 'prevent-back-history', 'auth.session'])->group(function () {
     Route::controller(AdminDailyRunSheetController::class)->group(function () {
         Route::get('/drs/admin/drs', 'index')->name('drs.admin.drs');
-        Route::get('/drs/admin/drs/list', 'list')->name('drs.admin.drs.list');
+        // Route::get('/drs/admin/drs/list', 'list')->name('drs.admin.drs.list');
+        Route::get('/drs/admin/show', 'show')->name('drs.admin.show');
+        Route::get('/drs/admin/drs/show/list', 'showAdminList')->name('drs.admin.show.list');
         Route::get('/drs/admin/events/{id}/switch',  'switch')->name('drs.admin.event.switch');
     });
 });

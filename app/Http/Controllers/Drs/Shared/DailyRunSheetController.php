@@ -68,6 +68,8 @@ class DailyRunSheetController extends Controller
                 'id'               => $s->id,
                 'sheet_type'       => '<span class="badge bg-primary">' . e($s->sheet_type) . '</span>',
                 'venue'            => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
+                'match'            => '<span class="fs-9">' . e($s->match ? $s->match->match_number : '-') . '</span>',
+                'teams'            => '<span class="fs-9">' . e($s->match ? $s->match->pma1 . ' vs ' . $s->match->pma2 : '-') . '</span>',
                 'functional_area'  => '<span class="fs-9">' . e($s->functionalArea?->title ?? '-') . '</span>',
                 'run_date'         => '<span class="fs-9">' . e($s->run_date_dmy) . '</span>',
                 'gates_opening'    => '<span class="fs-9">' . ($s->gates_opening ? \Carbon\Carbon::parse($s->gates_opening)->format('H:i') : '-') . '</span>',
@@ -409,7 +411,7 @@ class DailyRunSheetController extends Controller
         $matches = EventMatch::where('event_id', $eventId)
             ->where('venue_id', $venueId)
             ->orderBy('match_date')
-            ->get(['id', 'match_number', 'match_date']);
+            ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2']);
 
         return response()->json($matches);
     }

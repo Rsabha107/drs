@@ -1,10 +1,11 @@
 @extends('drs.layout.admin_template')
 @section('main')
     @php
-        $event = $sheet->event;
+        // $event = $sheet->event;
         // $matches = \App\Models\Drs\EventMatch::where('event_id', $event->id)->orderBy('match_date')->get();
 
-        $koFormatted = $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : '';
+        // $koFormatted = $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : '';
+        $koFormatted = null ?: '';
 
         // $itemsJson = $sheet->items
         //     ->map(
@@ -110,10 +111,10 @@
             <ol class="breadcrumb breadcrumb-style1 mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('drs.drs.index') }}">Daily Run Sheets</a></li>
-                <li class="breadcrumb-item active">{{ $sheet->sheet_type }} &mdash; {{ $sheet->run_date_dmy }}</li>
+                {{-- <li class="breadcrumb-item active">{{ $sheet->sheet_type }} &mdash; {{ $sheet->run_date_dmy }}</li> --}}
             </ol>
         </nav>
-        <div class="d-flex gap-2">
+        {{-- <div class="d-flex gap-2">
             <button type="button" class="btn btn-subtle-success" data-bs-toggle="modal" data-bs-target="#add_item_modal">
                 <i class="fa-solid fa-plus me-1"></i>Add Item
             </button>
@@ -126,17 +127,16 @@
             <button onclick="window.print()" class="btn btn-subtle-secondary">
                 <i class="fa-solid fa-print me-1"></i>Print
             </button>
-        </div>
+        </div> --}}
     </div>
 
     <div class="card mx-2">
         <div class="card-body pb-0">
 
             {{-- Sheet header --}}
-            <div class="d-flex justify-content-between align-items-start mb-3">
+            {{-- <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                     <h4 class="fw-bold mb-1" id="show-sheet-type">Daily Run Sheet ({{ $sheet->sheet_type }})</h4>
-                    <div class="text-muted small">{{ $event->name ?? '' }}</div>
                 </div>
                 <table class="drs-header-table table table-bordered mb-0" style="width:340px;">
                     <tr>
@@ -167,7 +167,7 @@
                             {{ $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : 'N/A' }}</td>
                     </tr>
                 </table>
-            </div>
+            </div> --}}
 
             {{-- Items table --}}
             {{-- <table id="items_table"></table> --}}
@@ -179,7 +179,7 @@
                 <div class="table-responsive">
                     <table id="items_table" data-toggle="table"
                         data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
-                        data-loading-template="loadingTemplate" data-url="{{ route('drs.show.list', $sheet->id) }}"
+                        data-loading-template="loadingTemplate" data-url="{{ route('drs.admin.show.list') }}"
                         data-icons-prefix="bx" data-icons="icons" data-show-refresh="true" data-show-columns="true"
                         data-show-toggle="true" data-total-field="total" data-height="500" data-show-fullscreen="true"
                         data-fixed-scroll="true" data-data-field="rows" data-page-list="[10, 20, 50, 100]"
@@ -229,7 +229,7 @@
                 </div>
                 <form id="add_item_form" novalidate class="needs-validation">
                     @csrf
-                    <input type="hidden" name="run_sheet_id" value="{{ $sheet->id }}">
+                    {{-- <input type="hidden" name="run_sheet_id" value="{{ $sheet->id }}"> --}}
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-12">
