@@ -73,8 +73,8 @@ Route::get('/', function () {
     }
 
     $roleRoutes = [
-        'SuperAdmin' => 'drs.admin.report',
-        'Customer'   => 'drs.report',
+        'SuperAdmin' => 'drs.admin.drs',
+        'Customer'   => 'drs.drs.index',
     ];
 
     foreach ($roleRoutes as $role => $route) {

@@ -20,6 +20,8 @@ class DailyRunSheetController extends Controller
 {
     public function index()
     {
+        //check whitch role is logged in and return view accordingly
+
         $event = Event::findOrFail(session()->get('EVENT_ID'));
         $matches = EventMatch::where('event_id', $event->id)->orderBy('match_date')->get();
         $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
@@ -41,8 +43,22 @@ class DailyRunSheetController extends Controller
             $sort = 'run_date';
         }
 
-        $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
-            ->where('event_id', $eventId);
+        if (Auth::user()->hasRole('Customer')) {
+            // get only sheets that are assigned to the functional areas of the user
+            $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
+                ->where('event_id', $eventId)
+                ->whereHas('functionalArea', function ($q) {
+                    $q->whereIn('id', Auth::user()->fa->pluck('id'));
+                });
+        } elseif (Auth::user()->hasRole('SuperAdmin')) {
+            // get all sheets for the event
+            $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
+                ->where('event_id', $eventId);
+        } else {
+            // default to no sheets
+            $query = DailyRunSheet::whereRaw('0=1');
+        }
+
 
         if ($request->filled('venue_id')) {
             $query->where('venue_id', $request->venue_id);

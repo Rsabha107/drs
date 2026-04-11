@@ -122,7 +122,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    {{-- <div class="col-12 gy-3 mb-3">
+                                    <div class="col-12 gy-3 mb-3">
                                         <label class="form-label" for="inputAddress2">Functional Area
                                             (multiple)</label>
                                         <select class="form-select js-select-fa-assign-multiple" id="add_fa_assigned_to"
@@ -135,7 +135,7 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                    </div> --}}
+                                    </div>
                                     <div class="col-12 gy-3 mb-3">
                                         <label class="form-label" for="inputAddress2">Venue (multiple)</label>
                                         <select class="form-select js-select-venue-assign-multiple" id="add_venue_assigned_to"

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use App\Imports\PermissionImport;
 use App\Models\Drs\Event;
+use App\Models\Drs\FunctionalArea as DrsFunctionalArea;
 use App\Models\Wdr\FunctionalArea;
 use App\Models\Drs\Venue;
 // use App\Models\Mds\CmsEvent;
@@ -443,9 +444,9 @@ class RoleController extends Controller
         $roles = Role::all();
         $events = Event::all();
         $venues = Venue::all();
-        // $workspace = Workspace::all();
-        // $departments = Department::all();
-        return view('sec.adminuser.add', compact('roles', 'events', 'venues'));
+        $functional_areas = DrsFunctionalArea::all();
+
+        return view('sec.adminuser.add', compact('roles', 'events', 'venues', 'functional_areas'));
     }  // addAdminUser
 
     public function createAdminUser(Request $request)
@@ -505,11 +506,11 @@ class RoleController extends Controller
             }
         }
 
-        // if ($request->fa_id) {
-        //     foreach ($request->fa_id as $key => $data) {
-        //         $user->fa()->attach($request->fa_id[$key]);
-        //     }
-        // }
+        if ($request->fa_id) {
+            foreach ($request->fa_id as $key => $data) {
+                $user->fa()->attach($request->fa_id[$key]);
+            }
+        }
 
         if (config('settings.send_notifications')) {
             appLog('Sending new user notification to ' . $user->email);
@@ -529,8 +530,9 @@ class RoleController extends Controller
         $roles = Role::all();
         $events = Event::all();
         $venues = Venue::all();
+        $functional_areas = DrsFunctionalArea::all();
 
-        return view('sec.adminuser.edit', compact('user', 'roles', 'events', 'venues'));
+        return view('sec.adminuser.edit', compact('user', 'roles', 'events', 'venues', 'functional_areas'));
     }
 
     public function updateAdminUser(Request $request)
@@ -580,12 +582,12 @@ class RoleController extends Controller
                 $user->venues()->attach($request->venue_id[$key]);
             }
         }
-        // $user->fa()->detach();
-        // if ($request->fa_id) {
-        //     foreach ($request->fa_id as $key => $data) {
-        //         $user->fa()->attach($request->fa_id[$key]);
-        //     }
-        // }
+        $user->fa()->detach();
+        if ($request->fa_id) {
+            foreach ($request->fa_id as $key => $data) {
+                $user->fa()->attach($request->fa_id[$key]);
+            }
+        }
 
         $notification = array(
             'message'       => 'User updated successfully',

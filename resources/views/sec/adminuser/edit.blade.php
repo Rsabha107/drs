@@ -128,7 +128,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        {{-- <div class="col-12 gy-3 mb-3">
+                                        <div class="col-12 gy-3 mb-3">
                                             <label class="form-label" for="inputAddress2">Functional Area
                                                 (multiple)</label>
                                             <select class="form-select js-select-fa-assign-multiple"
@@ -143,7 +143,7 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                        </div> --}}
+                                        </div>
                                         <div class="col-12 gy-3 mb-3">
                                             <label class="form-label" for="inputAddress2">Venue
                                                 (multiple)</label>
@@ -244,6 +244,7 @@
 @endsection
 
 @push('script')
+
     <script src="{{ asset('assets/js/pages/sec/users.js') }}"></script>
     {{-- <script>
         $(document).ready(function() {

@@ -191,7 +191,7 @@ class VenueMatchReportController extends Controller
         // return back()->with('error', 'Workspace not found.');
         // return redirect()->route('tracki.project.show.card')->with('error', 'Workspace not found.');
         // appLog('event_id is null');
-        return redirect()->route('drs.report')->with('error', 'Event not found.');
+        return redirect()->route('drs.drs.index')->with('error', 'Event not found.');
         // }
     }
 
