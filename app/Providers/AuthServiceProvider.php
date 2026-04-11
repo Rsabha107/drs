@@ -4,7 +4,9 @@ namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
 
+use App\Models\Drs\DailyRunSheetItem;
 use App\Models\Wdr\WorkforceDailyReport;
+use App\Policies\DailyRunSheetItemPolicy;
 use App\Policies\WorkforceDailyReportPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -17,6 +19,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         //
+        DailyRunSheetItem::class    => DailyRunSheetItemPolicy::class,
         WorkforceDailyReport::class => WorkforceDailyReportPolicy::class,
     ];
 

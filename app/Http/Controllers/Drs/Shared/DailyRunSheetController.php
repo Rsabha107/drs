@@ -368,7 +368,8 @@ class DailyRunSheetController extends Controller
             'countdown_to_ko' => 'nullable|string',
         ]);
 
-        $item = DailyRunSheetItem::findOrFail($request->id);
+        $item = DailyRunSheetItem::with('runSheet')->findOrFail($request->id);
+        $this->authorize('update', $item);
         $item->update($request->only([
             'title',
             'start_time',
@@ -406,7 +407,8 @@ class DailyRunSheetController extends Controller
 
     public function itemDestroy($id)
     {
-        $item = DailyRunSheetItem::findOrFail($id);
+        $item = DailyRunSheetItem::with('runSheet')->findOrFail($id);
+        $this->authorize('delete', $item);
         $sheetId = $item->run_sheet_id;
         $item->delete();
 
