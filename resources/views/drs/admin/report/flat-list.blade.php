@@ -19,16 +19,11 @@
             border: 1px solid #bbb;
         }
 
-        .sheet-header-table td:first-child {
+        .sheet-header-table td:first-child,
+        .sheet-header-table td:nth-child(3) {
             font-weight: 600;
             background: #d9e1f2;
             white-space: nowrap;
-        }
-
-        .sheet-header-table td:nth-child(3) {
-            font-weight: 500;
-            background: #d9e1f2;
-
         }
 
         .sheet-title-row td {
@@ -52,29 +47,24 @@
             font-size: 0.80rem;
             padding: 5px 9px;
             vertical-align: middle;
-            border: 1px solid #dee2e6;
         }
 
         .run-sheet-table tr.color-red td {
             background-color: #ff0000 !important;
-            color: #fff;
+            color: #fff !important;
             font-weight: bold;
         }
 
         .run-sheet-table tr.color-yellow td {
             background-color: #ffff00 !important;
-            color: #000;
+            color: #000 !important;
             font-weight: bold;
         }
 
         .run-sheet-table tr.color-green td {
             background-color: #00b050 !important;
-            color: #fff;
+            color: #fff !important;
             font-weight: bold;
-        }
-
-        .run-sheet-table tbody tr:hover td {
-            filter: brightness(0.95);
         }
 
         @media print {
@@ -94,9 +84,14 @@
         </nav>
         <div class="d-flex gap-2">
             @if ($matchHeader)
-                <button type="button" class="btn btn-sm btn-subtle-success" data-bs-toggle="modal" data-bs-target="#add_item_modal">
+                <button type="button" class="btn btn-sm btn-subtle-success"
+                    data-bs-toggle="modal" data-bs-target="#add_item_modal">
                     <i class="fa-solid fa-plus me-1"></i>Add Item
                 </button>
+                <a href="{{ route('drs.admin.flat.list.export', ['venue_id' => $venueId, 'match_id' => $matchId]) }}"
+                    class="btn btn-sm btn-subtle-success">
+                    <i class="fa-solid fa-file-excel me-1"></i>Export Excel
+                </a>
                 <button onclick="window.print()" class="btn btn-sm btn-subtle-secondary">
                     <i class="fa-solid fa-print me-1"></i>Print
                 </button>
@@ -108,7 +103,8 @@
         <div class="card-body p-3">
 
             {{-- Filter bar --}}
-            <form method="GET" action="{{ route('drs.admin.flat.list') }}" id="filter_form" class="filter-bar mb-4 no-print">
+            <form method="GET" action="{{ route('drs.admin.flat.list') }}" id="filter_form"
+                class="filter-bar mb-4 no-print">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-4">
                         <label class="form-label fw-semibold mb-1">Venue</label>
@@ -142,7 +138,8 @@
                     </div>
                     @if ($venueId || $matchId)
                         <div class="col-md-2">
-                            <a href="{{ route('drs.admin.flat.list') }}" class="btn btn-sm btn-outline-secondary w-100">
+                            <a href="{{ route('drs.admin.flat.list') }}"
+                                class="btn btn-sm btn-outline-secondary w-100">
                                 <i class="fa-solid fa-xmark me-1"></i>Clear
                             </a>
                         </div>
@@ -156,16 +153,12 @@
                     <i class="fa-solid fa-filter fa-2x mb-3 d-block opacity-40"></i>
                     Select a venue and match to view the combined run sheet.
                 </div>
-
-            {{-- Results --}}
             @else
                 @php
                     $match       = $matchHeader?->match;
                     $venue       = $matchHeader?->venue;
                     $koFormatted = $matchHeader?->kick_off
-                        ? \Carbon\Carbon::parse($matchHeader->kick_off)->format('H:i')
-                        : '';
-                    $reloadUrl   = route('drs.admin.flat.list') . '?venue_id=' . $venueId . '&match_id=' . $matchId;
+                        ? \Carbon\Carbon::parse($matchHeader->kick_off)->format('H:i') : '';
                 @endphp
 
                 {{-- Excel-style header --}}
@@ -181,24 +174,23 @@
                             <td>Venue</td>
                             <td>{{ $venue?->short_name ?? $venue?->name ?? 'N/A' }}</td>
                             <td>Match No</td>
-                            <td>{{ $match ? $match->match_number : 'N/A' }}</td>
+                            <td>{{ $match?->match_number ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td>Date</td>
                             <td>
-                                {{ $match && $match->match_date
+                                {{ $match?->match_date
                                     ? \Carbon\Carbon::parse($match->match_date)->format('d/m/Y')
                                     : ($matchHeader?->run_date_dmy ?? 'N/A') }}
                             </td>
                             <td>Teams</td>
-                            <td>{{ $match ? ($match->pma1 . ' vs ' . $match->pma2) : 'N/A' }}</td>
+                            <td>{{ $match ? $match->pma1 . ' vs ' . $match->pma2 : 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td>Gates Opening</td>
                             <td>
                                 {{ $matchHeader?->gates_opening
-                                    ? \Carbon\Carbon::parse($matchHeader->gates_opening)->format('H:i')
-                                    : 'N/A' }}
+                                    ? \Carbon\Carbon::parse($matchHeader->gates_opening)->format('H:i') : 'N/A' }}
                             </td>
                             <td>Kick-Off</td>
                             <td>{{ $koFormatted ?: 'N/A' }}</td>
@@ -206,100 +198,46 @@
                     </table>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-2 no-print">
-                    <span class="text-muted small">
-                        {{ $items->count() }} item(s) across all functional areas — sorted by start time
-                    </span>
+                {{-- Bootstrap Table --}}
+                <div class="table-responsive">
+                    <table id="flat_items_table" data-toggle="table"
+                        data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
+                        data-loading-template="loadingTemplate"
+                        data-url="{{ route('drs.admin.flat.list.data') }}"
+                        data-icons-prefix="bx" data-icons="icons"
+                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
+                        data-show-fullscreen="true" data-fixed-scroll="true"
+                        data-total-field="total" data-data-field="rows"
+                        data-page-list="[25, 50, 100, 200, All]"
+                        data-search="true" data-side-pagination="server" data-pagination="true"
+                        data-sort-name="start_time" data-sort-order="asc"
+                        data-trim-on-search="false" data-mobile-responsive="true"
+                        data-buttons-class="secondary"
+                        data-row-style="itemRowStyle"
+                        data-query-params="queryParams">
+                        <thead>
+                            <tr>
+                                <th data-field="id" data-sortable="true" data-visible="false">ID</th>
+                                <th data-field="title" data-sortable="true">Title</th>
+                                <th data-field="start_time" data-sortable="true" style="width:85px">Start</th>
+                                <th data-field="countdown_to_ko" data-sortable="false" style="width:95px">Countdown</th>
+                                <th data-field="end_time" data-sortable="true" style="width:75px">End</th>
+                                <th data-field="functional_area" data-sortable="true">Functional Area</th>
+                                <th data-field="location" data-sortable="true">Location</th>
+                                <th data-field="description" data-sortable="false">Description</th>
+                                <th data-formatter="itemActionsFormatter"
+                                    class="no-print text-end" style="width:90px">Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
                 </div>
-
-                @if ($items->isEmpty())
-                    <div class="text-center py-4 text-muted">
-                        <i class="fa-solid fa-inbox fa-lg me-1"></i>
-                        No items found for this venue / match combination.
-                    </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-bordered run-sheet-table w-100" id="flat_items_table">
-                            <thead>
-                                <tr>
-                                    <th style="width:34px">#</th>
-                                    <th>Title</th>
-                                    <th style="width:78px">Start</th>
-                                    <th style="width:90px">Countdown</th>
-                                    <th style="width:78px">End</th>
-                                    <th>Functional Area</th>
-                                    <th>Location</th>
-                                    <th>Description</th>
-                                    <th class="no-print" style="width:80px">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($items as $item)
-                                    @php
-                                        $sheet    = $item->_parentSheet;
-                                        $fa       = $sheet?->functionalArea;
-                                        $faLabel  = $fa?->title ?? $fa?->name ?? ($item->functional_area ?? '-');
-
-                                        $countdown = $item->countdown_to_ko ?? '';
-                                        if ($item->start_time && $koFormatted) {
-                                            $koParts = explode(':', $koFormatted);
-                                            $koMins  = (int)$koParts[0] * 60 + (int)$koParts[1];
-                                            $sParts  = explode(':', \Carbon\Carbon::parse($item->start_time)->format('H:i'));
-                                            $sMins   = (int)$sParts[0] * 60 + (int)$sParts[1];
-                                            $diff    = $sMins - $koMins;
-                                            if ($diff === 0) {
-                                                $countdown = 'KO';
-                                            } else {
-                                                $sign  = $diff > 0 ? '+' : '-';
-                                                $abs   = abs($diff);
-                                                $h     = intdiv($abs, 60);
-                                                $m     = $abs % 60;
-                                                $label = 'KO' . $sign;
-                                                if ($h > 0) $label .= $h . 'h';
-                                                if ($m > 0) $label .= $m . 'm';
-                                                $countdown = $label;
-                                            }
-                                        }
-
-                                        $rowClass = ($item->row_color && $item->row_color !== 'default')
-                                            ? 'color-' . $item->row_color : '';
-                                    @endphp
-                                    <tr class="{{ $rowClass }}" data-id="{{ $item->id }}">
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $item->title }}</td>
-                                        <td>{{ $item->start_time ? \Carbon\Carbon::parse($item->start_time)->format('H:i') : '-' }}</td>
-                                        <td>{{ $countdown ?: '-' }}</td>
-                                        <td>{{ $item->end_time ? \Carbon\Carbon::parse($item->end_time)->format('H:i') : '-' }}</td>
-                                        <td>{{ $faLabel }}</td>
-                                        <td>{{ $item->location ?? '-' }}</td>
-                                        <td>{{ $item->description ?? '-' }}</td>
-                                        <td class="no-print text-nowrap">
-                                            <button type="button"
-                                                class="btn btn-sm btn-phoenix-warning me-1 item-edit"
-                                                data-id="{{ $item->id }}" title="Edit">
-                                                <i class="fa-solid fa-pen"></i>
-                                            </button>
-                                            <button type="button"
-                                                class="btn btn-sm btn-phoenix-danger item-delete"
-                                                data-id="{{ $item->id }}" title="Delete">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
             @endif
 
         </div>
     </div>
 
     @if ($matchHeader)
-    {{-- ═══════════════════════════════════════════════════════
-         Add Item Modal
-    ═══════════════════════════════════════════════════════ --}}
+    {{-- ═══════════════════════════════════════════ Add Item Modal ═══ --}}
     <div class="modal fade" id="add_item_modal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content bg-100">
@@ -334,8 +272,7 @@
                                 <input type="time" name="start_time" id="add_start_time" class="form-control">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">
-                                    KO Offset
+                                <label class="form-label">KO Offset
                                     @if ($koFormatted)
                                         <span class="text-muted fw-normal">(KO {{ $koFormatted }})</span>
                                     @endif
@@ -364,7 +301,7 @@
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Description</label>
-                                <textarea name="description" class="form-control" rows="2" placeholder="Optional"></textarea>
+                                <textarea name="description" class="form-control" rows="2"></textarea>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Sort Order</label>
@@ -387,9 +324,7 @@
         </div>
     </div>
 
-    {{-- ═══════════════════════════════════════════════════════
-         Edit Item Modal
-    ═══════════════════════════════════════════════════════ --}}
+    {{-- ════════════════════════════════════════════ Edit Item Modal ═══ --}}
     <div class="modal fade" id="edit_item_modal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content bg-100">
@@ -412,8 +347,7 @@
                                 <input type="time" name="start_time" id="edit_item_start_time" class="form-control">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">
-                                    KO Offset
+                                <label class="form-label">KO Offset
                                     @if ($koFormatted)
                                         <span class="text-muted fw-normal">(KO {{ $koFormatted }})</span>
                                     @endif
@@ -466,58 +400,8 @@
     </div>
     @endif
 
+    {{-- ── Venue → Match dynamic loader ──────────────────────────────────── --}}
     <script>
-        var koTime      = '{{ $koFormatted ?? '' }}';
-        var reloadUrl   = '{!! $reloadUrl ?? '' !!}';
-        var csrfToken   = '{{ csrf_token() }}';
-
-        var colorStyles = {
-            'default': { bg: '#ffffff', text: '#000000' },
-            'red':     { bg: '#ff0000', text: '#ffffff' },
-            'yellow':  { bg: '#ffff00', text: '#000000' },
-            'green':   { bg: '#00b050', text: '#ffffff' },
-        };
-
-        // ── KO offset helpers ────────────────────────────────────────────
-        function parseKoOffset(text) {
-            if (!koTime) return null;
-            text = text.trim();
-            if (/^KO$/i.test(text)) return koTime;
-            var m = text.match(/^KO([+-])(?:(\d+)h)?(?:(\d+)m)?$/i);
-            if (!m || (!m[2] && !m[3])) {
-                var s = text.match(/^KO([+-])(\d+)$/i);
-                if (!s) return null;
-                m = [null, s[1], s[2], null];
-            }
-            var sign  = m[1] === '+' ? 1 : -1;
-            var hours = m[2] ? parseInt(m[2], 10) : 0;
-            var mins  = m[3] ? parseInt(m[3], 10) : 0;
-            var offset = sign * (hours * 60 + mins);
-            var koParts = koTime.split(':');
-            var koMins  = parseInt(koParts[0], 10) * 60 + parseInt(koParts[1], 10);
-            var result  = ((koMins + offset) % 1440 + 1440) % 1440;
-            return String(Math.floor(result / 60)).padStart(2, '0') + ':' + String(result % 60).padStart(2, '0');
-        }
-
-        function calcKoOffset(timeStr) {
-            if (!koTime || !timeStr) return '';
-            var koParts = koTime.split(':');
-            var koMins  = parseInt(koParts[0], 10) * 60 + parseInt(koParts[1], 10);
-            var tParts  = timeStr.split(':');
-            var tMins   = parseInt(tParts[0], 10) * 60 + parseInt(tParts[1], 10);
-            var diff = tMins - koMins;
-            if (diff === 0) return 'KO';
-            var sign = diff > 0 ? '+' : '-';
-            var abs  = Math.abs(diff);
-            var h    = Math.floor(abs / 60);
-            var m    = abs % 60;
-            var label = 'KO' + sign;
-            if (h > 0) label += h + 'h';
-            if (m > 0) label += m + 'm';
-            return label;
-        }
-
-        // ── Venue → Match dynamic loader ────────────────────────────────
         document.getElementById('venue_select').addEventListener('change', function () {
             var venueId     = this.value;
             var matchSelect = document.getElementById('match_select');
@@ -528,10 +412,10 @@
                 return;
             }
             fetch('/drs/venue/' + venueId + '/matches')
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     matchSelect.innerHTML = '<option value="">— Select Match —</option>';
-                    data.forEach(function(m) {
+                    data.forEach(function (m) {
                         var date  = m.match_date ? new Date(m.match_date).toLocaleDateString('en-GB') : '';
                         var teams = (m.pma1 || m.pma2) ? ' — ' + m.pma1 + ' vs ' + m.pma2 : '';
                         var opt   = document.createElement('option');
@@ -541,177 +425,245 @@
                     });
                     matchSelect.disabled = false;
                 })
-                .catch(function() {
+                .catch(function () {
                     matchSelect.innerHTML = '<option value="">— Error loading matches —</option>';
                 });
-        });
-
-        $(function () {
-
-            // ── Add modal: color preview & KO offset ──────────────────
-            function updateAddPreview() {
-                var s = colorStyles[$('#add_row_color_select').val()] || colorStyles['default'];
-                $('#add_color_preview').css({ 'background-color': s.bg, 'color': s.text });
-            }
-            $('#add_row_color_select').on('change', updateAddPreview);
-            updateAddPreview();
-
-            $('#add_start_time').on('change', function () {
-                $('#add_countdown_to_ko').val(calcKoOffset($(this).val()));
-            });
-            $('#add_countdown_to_ko').on('blur', function () {
-                var t = parseKoOffset($(this).val());
-                if (t) { $('#add_start_time').val(t); $(this).val(calcKoOffset(t)).removeClass('is-invalid'); }
-                else if ($(this).val().trim()) { $(this).addClass('is-invalid'); }
-            }).on('keydown', function (e) {
-                if (e.key === 'Enter') { e.preventDefault(); $(this).trigger('blur'); }
-            });
-
-            $('#add_item_modal').on('hidden.bs.modal', function () {
-                $('#add_item_form')[0].reset();
-                $('#add_item_form').removeClass('was-validated');
-                $('#add_countdown_to_ko').removeClass('is-invalid');
-                updateAddPreview();
-            });
-
-            $('#add_item_form').on('submit', function (e) {
-                e.preventDefault();
-                if (!this.checkValidity()) { $(this).addClass('was-validated'); return; }
-                var $btn = $('#add_item_btn');
-                var orig = $btn.html();
-                $btn.html('<i class="bx bx-loader-alt bx-spin me-1"></i>Adding…').prop('disabled', true);
-                $.ajax({
-                    url: '{{ route('drs.drs.item.store') }}',
-                    type: 'POST',
-                    data: $(this).serialize(),
-                    dataType: 'json',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    success: function (res) {
-                        if (res.error) { toastr.error(res.message); $btn.html(orig).prop('disabled', false); return; }
-                        toastr.success(res.message);
-                        $('#add_item_modal').modal('hide');
-                        window.location.href = reloadUrl;
-                    },
-                    error: function (xhr) {
-                        var msg = 'An error occurred.';
-                        try { msg = JSON.parse(xhr.responseText).message || msg; } catch (ex) {}
-                        toastr.error(msg);
-                        $btn.html(orig).prop('disabled', false);
-                    }
-                });
-            });
-
-            // ── Edit modal: color preview & KO offset ─────────────────
-            function updateEditPreview() {
-                var s = colorStyles[$('#edit_row_color_select').val()] || colorStyles['default'];
-                $('#edit_color_preview').css({ 'background-color': s.bg, 'color': s.text });
-            }
-            $('#edit_row_color_select').on('change', updateEditPreview);
-
-            $('#edit_item_start_time').on('change', function () {
-                $('#edit_countdown_to_ko').val(calcKoOffset($(this).val()));
-            });
-            $('#edit_countdown_to_ko').on('blur', function () {
-                var t = parseKoOffset($(this).val());
-                if (t) { $('#edit_item_start_time').val(t); $(this).val(calcKoOffset(t)).removeClass('is-invalid'); }
-                else if ($(this).val().trim()) { $(this).addClass('is-invalid'); }
-            }).on('keydown', function (e) {
-                if (e.key === 'Enter') { e.preventDefault(); $(this).trigger('blur'); }
-            });
-
-            $('#edit_item_modal').on('hidden.bs.modal', function () {
-                $('#edit_item_form').removeClass('was-validated');
-                $('#edit_countdown_to_ko').removeClass('is-invalid');
-            });
-
-            // Open edit modal — load item data via AJAX
-            $('body').on('click', '.item-edit', function () {
-                var id   = $(this).data('id');
-                var $btn = $(this);
-                var orig = $btn.html();
-                $btn.html('<i class="bx bx-loader-alt bx-spin"></i>').prop('disabled', true);
-                $.ajax({
-                    url: '/drs/drs/items/' + id + '/get',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        $('#edit_item_id').val(data.id);
-                        $('#edit_item_title').val(data.title);
-                        $('#edit_item_start_time').val(data.start_time);
-                        $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass('is-invalid');
-                        $('#edit_item_end_time').val(data.end_time);
-                        $('#edit_item_location').val(data.location);
-                        $('#edit_item_description').val(data.description);
-                        $('#edit_row_color_select').val(data.row_color);
-                        $('#edit_item_sort_order').val(data.sort_order);
-                        $('#edit_item_form').removeClass('was-validated');
-                        updateEditPreview();
-                        $('#edit_item_modal').modal('show');
-                    },
-                    error: function () { toastr.error('Could not load item data.'); },
-                    complete: function () { $btn.html(orig).prop('disabled', false); }
-                });
-            });
-
-            $('#edit_item_form').on('submit', function (e) {
-                e.preventDefault();
-                if (!this.checkValidity()) { $(this).addClass('was-validated'); return; }
-                var $btn = $('#edit_item_btn');
-                var orig = $btn.html();
-                $btn.html('<i class="bx bx-loader-alt bx-spin me-1"></i>Saving…').prop('disabled', true);
-                $.ajax({
-                    url: '{{ route('drs.drs.item.update') }}',
-                    type: 'POST',
-                    data: $(this).serialize(),
-                    dataType: 'json',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    success: function (res) {
-                        if (res.error) { toastr.error(res.message); $btn.html(orig).prop('disabled', false); return; }
-                        toastr.success(res.message);
-                        $('#edit_item_modal').modal('hide');
-                        window.location.href = reloadUrl;
-                    },
-                    error: function (xhr) {
-                        var msg = 'An error occurred.';
-                        try { msg = JSON.parse(xhr.responseText).message || msg; } catch (ex) {}
-                        toastr.error(msg);
-                        $btn.html(orig).prop('disabled', false);
-                    }
-                });
-            });
-
-            // ── Delete ────────────────────────────────────────────────
-            $('body').on('click', '.item-delete', function () {
-                var id = $(this).data('id');
-                Swal.fire({
-                    title: 'Delete this item?',
-                    text: 'This cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, delete',
-                }).then(function (result) {
-                    if (!result.isConfirmed) return;
-                    $.ajax({
-                        url: '/drs/drs/items/' + id,
-                        type: 'DELETE',
-                        dataType: 'json',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        },
-                        success: function (res) {
-                            toastr.success(res.message || 'Item deleted.');
-                            window.location.href = reloadUrl;
-                        },
-                        error: function () { toastr.error('Could not delete item.'); }
-                    });
-                });
-            });
-
         });
     </script>
 
 @endsection
+
+@push('script')
+<script>
+    var venueId   = '{{ $venueId ?? '' }}';
+    var matchId   = '{{ $matchId ?? '' }}';
+    var koTime    = '{{ $koFormatted ?? '' }}';
+    var csrfToken = '{{ csrf_token() }}';
+
+    // ── Bootstrap Table config ──────────────────────────────────────────
+    var icons = {
+        refresh:    'bx-refresh',
+        toggleOn:   'bx-toggle-right',
+        toggleOff:  'bx-toggle-left',
+        fullscreen: 'bx-fullscreen',
+        columns:    'bx-list-ul',
+    };
+
+    function loadingTemplate() {
+        return '<i class="bx bx-loader-alt bx-spin bx-flip-vertical"></i>';
+    }
+
+    function queryParams(p) {
+        return $.extend({}, p, { venue_id: venueId, match_id: matchId });
+    }
+
+    function itemRowStyle(row) {
+        var map = {
+            red:    { classes: 'color-red' },
+            yellow: { classes: 'color-yellow' },
+            green:  { classes: 'color-green' },
+        };
+        return map[row.row_color] || {};
+    }
+
+    function itemActionsFormatter(value, row) {
+        return '<button type="button" class="btn btn-sm btn-phoenix-warning me-1 item-edit" data-id="' + row.id + '" title="Edit"><i class="fa-solid fa-pen"></i></button>' +
+               '<button type="button" class="btn btn-sm btn-phoenix-danger item-delete" data-id="' + row.id + '" title="Delete"><i class="fa-solid fa-trash"></i></button>';
+    }
+
+    // ── KO offset helpers ───────────────────────────────────────────────
+    function parseKoOffset(text) {
+        if (!koTime) return null;
+        text = text.trim();
+        if (/^KO$/i.test(text)) return koTime;
+        var m = text.match(/^KO([+-])(?:(\d+)h)?(?:(\d+)m)?$/i);
+        if (!m || (!m[2] && !m[3])) {
+            var s = text.match(/^KO([+-])(\d+)$/i);
+            if (!s) return null;
+            m = [null, s[1], s[2], null];
+        }
+        var sign   = m[1] === '+' ? 1 : -1;
+        var hours  = m[2] ? parseInt(m[2], 10) : 0;
+        var mins   = m[3] ? parseInt(m[3], 10) : 0;
+        var offset = sign * (hours * 60 + mins);
+        var kp     = koTime.split(':');
+        var koMins = parseInt(kp[0], 10) * 60 + parseInt(kp[1], 10);
+        var result = ((koMins + offset) % 1440 + 1440) % 1440;
+        return String(Math.floor(result / 60)).padStart(2, '0') + ':' + String(result % 60).padStart(2, '0');
+    }
+
+    function calcKoOffset(timeStr) {
+        if (!koTime || !timeStr) return '';
+        var kp     = koTime.split(':');
+        var koMins = parseInt(kp[0], 10) * 60 + parseInt(kp[1], 10);
+        var tp     = timeStr.split(':');
+        var tMins  = parseInt(tp[0], 10) * 60 + parseInt(tp[1], 10);
+        var diff   = tMins - koMins;
+        if (diff === 0) return 'KO';
+        var sign  = diff > 0 ? '+' : '-';
+        var abs   = Math.abs(diff);
+        var label = 'KO' + sign;
+        if (Math.floor(abs / 60) > 0) label += Math.floor(abs / 60) + 'h';
+        if (abs % 60 > 0)             label += (abs % 60) + 'm';
+        return label;
+    }
+
+    var colorStyles = {
+        'default': { bg: '#ffffff', text: '#000000' },
+        'red':     { bg: '#ff0000', text: '#ffffff' },
+        'yellow':  { bg: '#ffff00', text: '#000000' },
+        'green':   { bg: '#00b050', text: '#ffffff' },
+    };
+
+    $(function () {
+
+        // ── Add modal ───────────────────────────────────────────────────
+        function updateAddPreview() {
+            var s = colorStyles[$('#add_row_color_select').val()] || colorStyles['default'];
+            $('#add_color_preview').css({ 'background-color': s.bg, 'color': s.text });
+        }
+        $('#add_row_color_select').on('change', updateAddPreview);
+        updateAddPreview();
+
+        $('#add_start_time').on('change', function () {
+            $('#add_countdown_to_ko').val(calcKoOffset($(this).val()));
+        });
+        $('#add_countdown_to_ko').on('blur', function () {
+            var t = parseKoOffset($(this).val());
+            if (t) { $('#add_start_time').val(t); $(this).val(calcKoOffset(t)).removeClass('is-invalid'); }
+            else if ($(this).val().trim()) { $(this).addClass('is-invalid'); }
+        }).on('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); $(this).trigger('blur'); }
+        });
+
+        $('#add_item_modal').on('hidden.bs.modal', function () {
+            $('#add_item_form')[0].reset();
+            $('#add_item_form').removeClass('was-validated');
+            $('#add_countdown_to_ko').removeClass('is-invalid');
+            updateAddPreview();
+        });
+
+        $('#add_item_form').on('submit', function (e) {
+            e.preventDefault();
+            if (!this.checkValidity()) { $(this).addClass('was-validated'); return; }
+            var $btn = $('#add_item_btn'), orig = $btn.html();
+            $btn.html('<i class="bx bx-loader-alt bx-spin me-1"></i>Adding…').prop('disabled', true);
+            $.ajax({
+                url: '{{ route('drs.drs.item.store') }}',
+                type: 'POST', data: $(this).serialize(), dataType: 'json',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                success: function (res) {
+                    if (res.error) { toastr.error(res.message); $btn.html(orig).prop('disabled', false); return; }
+                    toastr.success(res.message);
+                    $('#add_item_modal').modal('hide');
+                    $('#flat_items_table').bootstrapTable('refresh');
+                },
+                error: function (xhr) {
+                    var msg = 'An error occurred.';
+                    try { msg = JSON.parse(xhr.responseText).message || msg; } catch (ex) {}
+                    toastr.error(msg); $btn.html(orig).prop('disabled', false);
+                },
+                complete: function () { $btn.html(orig).prop('disabled', false); }
+            });
+        });
+
+        // ── Edit modal ──────────────────────────────────────────────────
+        function updateEditPreview() {
+            var s = colorStyles[$('#edit_row_color_select').val()] || colorStyles['default'];
+            $('#edit_color_preview').css({ 'background-color': s.bg, 'color': s.text });
+        }
+        $('#edit_row_color_select').on('change', updateEditPreview);
+
+        $('#edit_item_start_time').on('change', function () {
+            $('#edit_countdown_to_ko').val(calcKoOffset($(this).val()));
+        });
+        $('#edit_countdown_to_ko').on('blur', function () {
+            var t = parseKoOffset($(this).val());
+            if (t) { $('#edit_item_start_time').val(t); $(this).val(calcKoOffset(t)).removeClass('is-invalid'); }
+            else if ($(this).val().trim()) { $(this).addClass('is-invalid'); }
+        }).on('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); $(this).trigger('blur'); }
+        });
+
+        $('#edit_item_modal').on('hidden.bs.modal', function () {
+            $('#edit_item_form').removeClass('was-validated');
+            $('#edit_countdown_to_ko').removeClass('is-invalid');
+        });
+
+        $('body').on('click', '.item-edit', function () {
+            var id = $(this).data('id'), $btn = $(this), orig = $btn.html();
+            $btn.html('<i class="bx bx-loader-alt bx-spin"></i>').prop('disabled', true);
+            $.ajax({
+                url: '/drs/drs/items/' + id + '/get', type: 'GET', dataType: 'json',
+                success: function (data) {
+                    $('#edit_item_id').val(data.id);
+                    $('#edit_item_title').val(data.title);
+                    $('#edit_item_start_time').val(data.start_time);
+                    $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass('is-invalid');
+                    $('#edit_item_end_time').val(data.end_time);
+                    $('#edit_item_location').val(data.location);
+                    $('#edit_item_description').val(data.description);
+                    $('#edit_row_color_select').val(data.row_color);
+                    $('#edit_item_sort_order').val(data.sort_order);
+                    $('#edit_item_form').removeClass('was-validated');
+                    updateEditPreview();
+                    $('#edit_item_modal').modal('show');
+                },
+                error: function () { toastr.error('Could not load item data.'); },
+                complete: function () { $btn.html(orig).prop('disabled', false); }
+            });
+        });
+
+        $('#edit_item_form').on('submit', function (e) {
+            e.preventDefault();
+            if (!this.checkValidity()) { $(this).addClass('was-validated'); return; }
+            var $btn = $('#edit_item_btn'), orig = $btn.html();
+            $btn.html('<i class="bx bx-loader-alt bx-spin me-1"></i>Saving…').prop('disabled', true);
+            $.ajax({
+                url: '{{ route('drs.drs.item.update') }}',
+                type: 'POST', data: $(this).serialize(), dataType: 'json',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                success: function (res) {
+                    if (res.error) { toastr.error(res.message); $btn.html(orig).prop('disabled', false); return; }
+                    toastr.success(res.message);
+                    $('#edit_item_modal').modal('hide');
+                    $('#flat_items_table').bootstrapTable('refresh');
+                },
+                error: function (xhr) {
+                    var msg = 'An error occurred.';
+                    try { msg = JSON.parse(xhr.responseText).message || msg; } catch (ex) {}
+                    toastr.error(msg);
+                },
+                complete: function () { $btn.html(orig).prop('disabled', false); }
+            });
+        });
+
+        // ── Delete ──────────────────────────────────────────────────────
+        $('body').on('click', '.item-delete', function () {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: 'Delete this item?',
+                text: 'This cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                $.ajax({
+                    url: '/drs/drs/items/' + id,
+                    type: 'DELETE', dataType: 'json',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    success: function (res) {
+                        toastr.success(res.message || 'Item deleted.');
+                        $('#flat_items_table').bootstrapTable('refresh');
+                    },
+                    error: function () { toastr.error('Could not delete item.'); }
+                });
+            });
+        });
+
+    });
+</script>
+@endpush

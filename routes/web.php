@@ -200,6 +200,8 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::get('/drs/admin/drs/list', 'list')->name('drs.admin.drs.list');
         Route::get('/drs/admin/venue-match', 'venueMatchView')->name('drs.admin.venue.match');
         Route::get('/drs/admin/flat-list', 'flatListView')->name('drs.admin.flat.list');
+        Route::get('/drs/admin/flat-list/data', 'flatListData')->name('drs.admin.flat.list.data');
+        Route::get('/drs/admin/flat-list/export', 'flatListExport')->name('drs.admin.flat.list.export');
         Route::get('/drs/admin/events/{id}/switch',  'switch')->name('drs.admin.event.switch');
     });
 });

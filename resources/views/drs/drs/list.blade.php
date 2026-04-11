@@ -8,7 +8,7 @@
             </ol>
         </nav>
         <div class="d-flex gap-2 align-items-center">
-            <select id="filter_venue" class="form-select form-select-sm" style="width:160px;">
+            {{-- <select id="filter_venue" class="form-select form-select-sm" style="width:160px;">
                 <option value="">All Venues</option>
                 @foreach ($event->venues as $v)
                     <option value="{{ $v->id }}">{{ $v->short_name }}</option>
@@ -25,11 +25,11 @@
                 @foreach ($functionalAreas ?? [] as $fa)
                     <option value="{{ $fa->id }}">{{ $fa->title }}</option>
                 @endforeach
-            </select>
-            <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
+            </select> --}}
+            {{-- <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
                 data-bs-target="#create_drs_modal">
                 <i class="fa-solid fa-plus me-1"></i>New Run Sheet
-            </button>
+            </button> --}}
             <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
                 <i class="fa-solid fa-eye me-1"></i>Admin View
             </a>
@@ -45,7 +45,34 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table id="drs_table" data-toggle="table"
+
+                <div id="toolbar">
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
+                            data-bs-target="#create_drs_modal">
+                            <i class="fa-solid fa-plus me-1"></i>New Run Sheet
+                        </button>
+                        <select id="filter_venue" class="form-select form-select-sm" style="width:160px;">
+                            <option value="">All Venues</option>
+                            @foreach ($event->venues as $v)
+                                <option value="{{ $v->id }}">{{ $v->short_name }}</option>
+                            @endforeach
+                        </select>
+                        <select id="filter_type" class="form-select form-select-sm" style="width:140px;">
+                            <option value="">All Types</option>
+                            @foreach (['MD-3', 'MD-2', 'MD-1', 'MD', 'MD FINAL', 'MD+1'] as $t)
+                                <option>{{ $t }}</option>
+                            @endforeach
+                        </select>
+                        <select id="filter_functional_area" class="form-select form-select-sm" style="width:160px;">
+                            <option value="">All Func. Areas</option>
+                            @foreach ($functionalAreas ?? [] as $fa)
+                                <option value="{{ $fa->id }}">{{ $fa->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <table id="drs_table" data-toggle="table" data-toolbar="#toolbar"
                     data-classes="table table-hover fs-9 mb-0 border-top border-translucent"
                     data-loading-template="loadingTemplate" data-url="{{ route('drs.drs.list') }}" data-icons-prefix="bx"
                     data-icons="icons" data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
