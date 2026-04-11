@@ -913,6 +913,69 @@
             });
         });
 
+        // ── Helpers: match loading & teams fill ─────────────────────────
+        function fillTeams($form, pma1, pma2) {
+            var $t = $form.find('[id$="_drs_teams"]');
+            if (pma1 || pma2) {
+                $t.val((pma1 || '?') + ' vs ' + (pma2 || '?'));
+            } else {
+                $t.val('');
+            }
+        }
+
+        function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId, $form) {
+            var venueId = $venueSelect.val();
+            $matchSelect.empty().append('<option value="">N/A</option>').prop('disabled', true);
+
+            if (!venueId) {
+                $matchSelect.append('<option value="" disabled selected>— select a venue first —</option>');
+                return;
+            }
+
+            $matchSelect.append('<option value="" disabled selected>Loading…</option>');
+
+            $.ajax({
+                url: '/drs/venue/' + venueId + '/matches',
+                type: 'GET',
+                dataType: 'json',
+                success: function(matches) {
+                    $matchSelect.empty().append(
+                        '<option value="" data-date="" data-pma1="" data-pma2="">N/A</option>');
+                    $.each(matches, function(i, m) {
+                        var label    = 'M' + m.match_number + ' — ' + m.match_date;
+                        var selected = (selectedMatchId && m.id == selectedMatchId) ? ' selected' : '';
+                        $matchSelect.append(
+                            '<option value="' + m.id + '"' +
+                            ' data-date="' + m.match_date + '"' +
+                            ' data-pma1="' + (m.pma1 || '') + '"' +
+                            ' data-pma2="' + (m.pma2 || '') + '"' +
+                            selected + '>' + label + '</option>'
+                        );
+                    });
+                    $matchSelect.prop('disabled', false);
+                    if (selectedMatchId) {
+                        var $sel = $matchSelect.find('option:selected');
+                        fillTeams($form, $sel.data('pma1'), $sel.data('pma2'));
+                    }
+                },
+                error: function() {
+                    $matchSelect.empty().append('<option value="">— could not load matches —</option>');
+                }
+            });
+        }
+
+        // Match change → fill teams
+        $('body').on('change', '#edit_drs_match_id', function() {
+            var $opt = $(this).find('option:selected');
+            fillTeams($('#edit_drs_form'), $opt.data('pma1'), $opt.data('pma2'));
+        });
+
+        // Venue change in edit modal → reload matches, clear teams
+        $('#edit_drs_venue_id').on('change', function() {
+            fillTeams($('#edit_drs_form'), '', '');
+            loadDrsMatches($(this), $('#edit_drs_match_id'), null, $('#edit_drs_form'));
+        });
+
         // ── Open edit modal ─────────────────────────────────────────────
         $('body').on('click', '.drs-edit', function() {
             var id = $(this).data('id');
@@ -929,10 +992,16 @@
                     $('#edit_drs_form [name="venue_id"]').val(data.venue_id);
                     $('#edit_drs_form [name="sheet_type"]').val(data.sheet_type);
                     $('#edit_drs_form [name="run_date"]').val(data.run_date);
-                    $('#edit_drs_form [name="match_id"]').val(data.match_id || '');
                     $('#edit_drs_form [name="gates_opening"]').val(data.gates_opening);
                     $('#edit_drs_form [name="kick_off"]').val(data.kick_off);
                     $('#edit_drs_form').removeClass('was-validated');
+                    // Load matches for the venue, pre-select the current match, fill teams
+                    loadDrsMatches(
+                        $('#edit_drs_venue_id'),
+                        $('#edit_drs_match_id'),
+                        data.match_id || null,
+                        $('#edit_drs_form')
+                    );
                     $('#edit_drs_modal').modal('show');
                 },
                 error: function() {
