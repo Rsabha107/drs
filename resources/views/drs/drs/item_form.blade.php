@@ -1,4 +1,4 @@
-@extends('drs.layout.admin_template')
+@extends(auth()->user()->hasRole('SuperAdmin') ? 'drs.layout.admin_template' : 'drs.customer.layout.template')
 @section('main')
 
 @php $isEdit = isset($item); @endphp
