@@ -149,7 +149,17 @@ class DailyRunSheetController extends Controller
 
     public function show($id)
     {
-        $sheet = DailyRunSheet::with(['event', 'venue', 'match', 'items'])->findOrFail($id);
+        $sheet = DailyRunSheet::with(['event', 'venue', 'match', 'functionalArea', 'items'])
+            ->findOrFail($id);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->hasRole('Customer')) {
+            $userFaIds = $user->fa()->pluck('functional_areas.id');
+            abort_unless($userFaIds->contains($sheet->functional_area_id), 403);
+        }
+
         return view('drs.drs.show', compact('sheet'));
     }
 
@@ -159,18 +169,29 @@ class DailyRunSheetController extends Controller
     {
         $eventId = session()->get('EVENT_ID');
 
+        // Verify the run sheet belongs to the current event
+        $sheet = DailyRunSheet::where('id', $id)
+            ->where('event_id', $eventId)
+            ->firstOrFail();
+
+        // For Customer: verify the sheet belongs to one of their functional areas
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole('Customer')) {
+            $userFaIds = $user->fa()->pluck('functional_areas.id');
+            abort_unless($userFaIds->contains($sheet->functional_area_id), 403);
+        }
+
         $sort  = $request->input('sort', 'start_time');
-        $order = $request->input('order', 'desc');
+        $order = $request->input('order', 'asc');
         $limit = max(1, min((int) $request->input('limit', 20), 200));
 
-
-        $allowedSorts = ['id', 'sheet_type', 'run_date', 'gates_opening', 'kick_off', 'start_time'];
+        $allowedSorts = ['id', 'title', 'start_time', 'end_time', 'countdown_to_ko', 'location'];
         if (!in_array($sort, $allowedSorts)) {
             $sort = 'start_time';
         }
 
-        $query = DailyRunSheetItem::where('run_sheet_id', $id);
-        // ->where('event_id', $eventId);
+        $query = DailyRunSheetItem::where('run_sheet_id', $sheet->id);
 
 
         if ($request->filled('search')) {
