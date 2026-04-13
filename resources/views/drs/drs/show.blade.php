@@ -424,7 +424,20 @@
     <script>
         // ── Bootstrap-table setup ───────────────────────────────────────
 
-
+        function queryParams(p) {
+            return {
+                page: p.offset / p.limit + 1,
+                limit: p.limit,
+                sort: p.sort,
+                order: p.order,
+                offset: p.offset,
+                search: p.search,
+                venue_id: $('#filter_venue').val(),
+                sheet_type: $('#filter_type').val(),
+                functional_area_id: $('#filter_functional_area').val(),
+            };
+        }
+        
         var icons = {
             refresh: 'bx-refresh',
             toggleOn: 'bx-toggle-right',

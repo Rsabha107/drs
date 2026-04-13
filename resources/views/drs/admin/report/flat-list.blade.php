@@ -453,9 +453,27 @@
         return '<i class="bx bx-loader-alt bx-spin bx-flip-vertical"></i>';
     }
 
-    function queryParams(p) {
-        return $.extend({}, p, { venue_id: venueId, match_id: matchId });
-    }
+                function queryParams(p) {
+            return {
+                page: p.offset / p.limit + 1,
+                limit: p.limit,
+                sort: p.sort,
+                order: p.order,
+                offset: p.offset,
+                search: p.search,
+                // venue_id: $('#venue_select').val(),
+                // match_id: $('#match_select').val(),
+                venue_id: venueId,
+                match_id: matchId,
+                sheet_type: $('#match_select').val(),
+                functional_area_id: $('#filter_functional_area').val(),
+            };
+        }
+
+    // function queryParams(p) {
+    //     return $.extend({}, p, { venue_id: venueId, match_id: matchId });
+    // }
+
 
     function itemRowStyle(row) {
         var map = {
