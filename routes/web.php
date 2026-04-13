@@ -202,6 +202,7 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::get('/drs/admin/flat-list', 'flatListView')->name('drs.admin.flat.list');
         Route::get('/drs/admin/flat-list/data', 'flatListData')->name('drs.admin.flat.list.data');
         Route::get('/drs/admin/flat-list/export', 'flatListExport')->name('drs.admin.flat.list.export');
+        Route::get('/drs/admin/flat-list/sheet-types', 'sheetTypesByMatch')->name('drs.admin.flat.sheet.types');
         Route::get('/drs/admin/events/{id}/switch',  'switch')->name('drs.admin.event.switch');
     });
 });
@@ -290,7 +291,7 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer',  'role:Customer
 Route::get('/drs/customer/report/pick', function () {
     return view('/drs/customer/report/pick');
 })->name('drs.customer.report.pick')->middleware('role:Customer');
-Route::post('/drs/customer/events/switch', [VenueMatchReportController::class, 'pickEvent'])->name('drs.customer.report.event.switch')->middleware('role:Customer');
+Route::post('/drs/customer/events/switch', [SharedDailyRunSheetController::class, 'pickEvent'])->name('drs.customer.report.event.switch')->middleware('role:Customer');
 
 Route::get('/drs/logout', [VmsAuthAdminController::class, 'logout'])->name('drs.logout');
 
