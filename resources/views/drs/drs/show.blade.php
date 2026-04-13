@@ -50,6 +50,16 @@
     @endphp
 
     <style>
+        .action-btns {
+            white-space: nowrap;
+        }
+
+        .bootstrap-table .table td:last-child,
+        .bootstrap-table .table th:last-child {
+            white-space: nowrap;
+            min-width: 140px;
+        }
+
         .drs-header-table td {
             padding: 4px 12px;
             font-size: 0.9rem;
@@ -102,6 +112,10 @@
                 box-shadow: none !important;
             }
         }
+
+        .font-size-14 {
+            font-size: 14px !important;
+        }
     </style>
 
     {{-- Action bar --}}
@@ -132,11 +146,167 @@
         </div>
     </div>
 
-    <div class="card mx-2">
+    <div class="card mx-2 mb-4">
         <div class="card-body pb-0">
 
+            <div class="col-xl-12">
+                <div class="row">
+                    <div class="col-sm-2 mb-1">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-xs me-3">
+                                        <span
+                                            class="avatar-title rounded-circle bg-primary-subtle text-primary font-size-18">
+                                            <i class="bx bx-copy-alt">
+                                            </i>
+                                        </span>
+                                    </div>
+                                    <h5 class="font-size-14 mb-0">
+                                        DRS Type
+                                    </h5>
+                                </div>
+                                <div class="text-muted mt-4">
+                                    <h4>
+                                        {{ $sheet->sheet_type ?? 'N/A' }}
+                                        <i class="mdi mdi-chevron-up ms-1 text-success">
+                                        </i>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2 mb-1">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-xs me-3">
+                                        <span
+                                            class="avatar-title rounded-circle bg-primary-subtle text-primary font-size-18">
+                                            <i class="bx bx-copy-alt">
+                                            </i>
+                                        </span>
+                                    </div>
+                                    <h5 class="font-size-14 mb-0">
+                                        Venue
+                                    </h5>
+                                </div>
+                                <div class="text-muted mt-4">
+                                    <h4>
+                                        {{ $sheet->venue->short_name ?? 'N/A' }}
+                                        <i class="mdi mdi-chevron-up ms-1 text-success">
+                                        </i>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2 mb-1">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-xs me-3">
+                                        <span
+                                            class="avatar-title rounded-circle bg-primary-subtle text-primary font-size-18">
+                                            <i class="bx bx-copy-alt">
+                                            </i>
+                                        </span>
+                                    </div>
+                                    <h5 class="font-size-14 mb-0">
+                                        Match
+                                    </h5>
+                                </div>
+                                <div class="text-muted mt-4">
+                                    <h4>
+                                        {{ $sheet->match ? 'M' . $sheet->match->match_number : 'N/A' }}
+                                        <i class="mdi mdi-chevron-up ms-1 text-success">
+                                        </i>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2 mb-1">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-xs me-3">
+                                        <span
+                                            class="avatar-title rounded-circle bg-primary-subtle text-primary font-size-18">
+                                            <i class="bx bx-copy-alt">
+                                            </i>
+                                        </span>
+                                    </div>
+                                    <h5 class="font-size-14 mb-0">
+                                        Date
+                                    </h5>
+                                </div>
+                                <div class="text-muted mt-4">
+                                    <h4>
+                                        {{ $sheet->run_date_dmy }}
+                                        <i class="mdi mdi-chevron-up ms-1 text-success">
+                                        </i>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2 mb-1">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-xs me-3">
+                                        <span
+                                            class="avatar-title rounded-circle bg-primary-subtle text-primary font-size-18">
+                                            <i class="bx bx-archive-in">
+                                            </i>
+                                        </span>
+                                    </div>
+                                    <h5 class="font-size-14 mb-0">
+                                        Team
+                                    </h5>
+                                </div>
+                                <div class="text-muted mt-4">
+                                    <h4>
+                                        {{ $sheet->match ? $sheet->match->pma1 . ' vs ' . $sheet->match->pma2 : 'N/A' }}
+
+                                        </i>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        <div class="col-sm-2 mb-1">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-xs me-3">
+                                        <span
+                                            class="avatar-title rounded-circle bg-primary-subtle text-primary font-size-18">
+                                            <i class="bx bx-archive-in">
+                                            </i>
+                                        </span>
+                                    </div>
+                                    <h5 class="font-size-14 mb-0">
+                                        Open : Kick-Off
+                                    </h5>
+                                </div>
+                                <div class="text-muted mt-4">
+                                    <h4>
+                                        {{ $sheet->gates_opening ? \Carbon\Carbon::parse($sheet->gates_opening)->format('H:i') : 'N/A' }} : {{ $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : 'N/A' }}
+
+                                        </i>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+
             {{-- Sheet header --}}
-            <div class="d-flex justify-content-between align-items-start mb-3">
+            {{-- <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                     <h4 class="fw-bold mb-1" id="show-sheet-type">Daily Run Sheet ({{ $sheet->sheet_type }})</h4>
                     <div class="text-muted small">{{ $event->name ?? '' }}</div>
@@ -156,7 +326,8 @@
                     </tr>
                     <tr>
                         <td>Team</td>
-                        <td id="show-team">{{ $sheet->match ? $sheet->match->pma1 . ' vs ' . $sheet->match->pma2 : 'N/A' }}
+                        <td id="show-team">
+                            {{ $sheet->match ? $sheet->match->pma1 . ' vs ' . $sheet->match->pma2 : 'N/A' }}
                         </td>
                     </tr>
                     <tr>
@@ -171,13 +342,13 @@
                             {{ $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : 'N/A' }}</td>
                     </tr>
                 </table>
-            </div>
+            </div> --}}
 
             {{-- Items table --}}
             {{-- <table id="items_table"></table> --}}
 
 
-            <div class="card mx-2 mb-4 px-3">
+            <div class="card mb-4 mt-3">
 
                 {{-- <div class="card-body"> --}}
                 <div class="table-responsive">
@@ -185,16 +356,17 @@
                         data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
                         data-row-style="itemRowStyle" data-loading-template="loadingTemplate"
                         data-url="{{ route('drs.show.list', $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
-                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true" data-total-field="total"
-                        data-height="500" data-show-fullscreen="true" data-fixed-scroll="true" data-data-field="rows"
-                        data-page-list="[10, 20, 50, 100]" data-search="true" data-side-pagination="server"
-                        data-pagination="true" data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
+                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
+                        data-total-field="total" data-height="500" data-show-fullscreen="true" data-fixed-scroll="true"
+                        data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-search="true"
+                        data-side-pagination="server" data-icon-size="sm" data-pagination="true"
+                        data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
                         data-show-pagination-switch="true" data-mobile-responsive="true" data-buttons-class="secondary"
                         data-query-params="queryParams">
                         <thead>
                             <tr>
                                 <th data-field="id" data-sortable="true" data-visible="false">ID</th>
-                                <th data-field="title" data-sortable="true">Title</th>
+                                <th data-field="title" class="text-nowrap" data-sortable="true">Title</th>
                                 <th data-field="start_time" data-sortable="true">Start Time</th>
                                 <th data-field="countdown_to_ko" data-sortable="true">Countdown</th>
                                 <th data-field="end_time" data-sortable="true">End Time</th>
@@ -485,16 +657,33 @@
             return label ? '<span class="text-nowrap fst-italic">' + label + '</span>' : '';
         }
 
+        // function itemActionsFormatter(value, row) {
+        //     if (!row.can_edit) return '';
+        //     return [
+        //         '<button type="button" class="btn btn-sm btn-phoenix-warning me-1 item-edit" data-id="' + row.id +
+        //         '" title="Edit"><i class="fa-solid fa-pen"></i></button>',
+        //         '<button type="button" class="btn btn-sm btn-phoenix-info me-1 item-duplicate" data-id="' + row.id +
+        //         '" title="Duplicate"><i class="fa-solid fa-copy"></i></button>',
+        //         '<button type="button" class="btn btn-sm btn-phoenix-danger item-delete" data-id="' + row.id +
+        //         '" title="Delete"><i class="fa-solid fa-trash"></i></button>',
+        //     ].join('');
+        // }
+
         function itemActionsFormatter(value, row) {
             if (!row.can_edit) return '';
-            return [
-                '<button type="button" class="btn btn-sm btn-phoenix-warning me-1 item-edit" data-id="' + row.id +
-                '" title="Edit"><i class="fa-solid fa-pen"></i></button>',
-                '<button type="button" class="btn btn-sm btn-phoenix-info me-1 item-duplicate" data-id="' + row.id +
-                '" title="Duplicate"><i class="fa-solid fa-copy"></i></button>',
-                '<button type="button" class="btn btn-sm btn-phoenix-danger item-delete" data-id="' + row.id +
-                '" title="Delete"><i class="fa-solid fa-trash"></i></button>',
-            ].join('');
+            return `
+        <div class="d-flex flex-nowrap justify-content-end align-items-center gap-1 action-btns">
+            <button type="button" class="btn btn-sm btn-phoenix-warning item-edit" data-id="${row.id}" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-phoenix-info item-duplicate" data-id="${row.id}" title="Duplicate">
+                <i class="fa-solid fa-copy"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-phoenix-danger item-delete" data-id="${row.id}" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
         }
 
         // $(function() {

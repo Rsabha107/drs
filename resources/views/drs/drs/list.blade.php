@@ -6,12 +6,15 @@
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                 <li class="breadcrumb-item active">Daily Run Sheets</li>
             </ol>
-            @if($userFas->isNotEmpty())
-                <div class="mt-1 d-flex flex-wrap gap-1">
-                    @foreach($userFas as $fa)
-                        <span class="badge bg-primary">{{ $fa->fa_code }} &mdash; {{ $fa->title }}</span>
-                    @endforeach
-                </div>
+            @if (Auth::user()->hasRole('Customer') && $userFas->isNotEmpty())
+
+                @if ($userFas->isNotEmpty())
+                    <div class="mt-1 d-flex flex-wrap gap-1">
+                        @foreach ($userFas as $fa)
+                            <span class="badge bg-primary">{{ $fa->fa_code }} &mdash; {{ $fa->title }}</span>
+                        @endforeach
+                    </div>
+                @endif
             @endif
         </nav>
         <div class="d-flex gap-2 align-items-center">
@@ -37,18 +40,18 @@
                 data-bs-target="#create_drs_modal">
                 <i class="fa-solid fa-plus me-1"></i>New Run Sheet
             </button>
-            @unless(auth()->user()->hasRole('Customer'))
-            <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
-                <i class="fa-solid fa-eye me-1"></i>Admin View
-            </a>
-            <a href="{{ route('drs.admin.flat.list') }}" class="btn btn-success">
-                <i class="fa-solid fa-eye me-1"></i>Combined List View
-            </a>
+            @unless (auth()->user()->hasRole('Customer'))
+                <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
+                    <i class="fa-solid fa-eye me-1"></i>Admin View
+                </a>
+                <a href="{{ route('drs.admin.flat.list') }}" class="btn btn-success">
+                    <i class="fa-solid fa-eye me-1"></i>Combined List View
+                </a>
             @endunless
         </div>
     </div>
 
-    <div class="card mx-2">
+    <div class="card mx-2 mb-4">
         <div class="card-header">
             <h5 class="mb-0">Daily Run Sheets &mdash; {{ $event->name }}</h5>
         </div>
@@ -75,7 +78,7 @@
                         </select>
                         <select id="filter_functional_area" class="form-select form-select-sm" style="width:160px;">
                             <option value="">All Func. Areas</option>
-                            @foreach ($userFas->isNotEmpty() ? $userFas : ($functionalAreas ?? collect()) as $fa)
+                            @foreach ($userFas->isNotEmpty() ? $userFas : $functionalAreas ?? collect() as $fa)
                                 <option value="{{ $fa->id }}">{{ $fa->title }}</option>
                             @endforeach
                         </select>
@@ -85,6 +88,7 @@
                     data-classes="table table-hover fs-9 mb-0 border-top border-translucent"
                     data-loading-template="loadingTemplate" data-url="{{ route('drs.drs.list') }}" data-icons-prefix="bx"
                     data-icons="icons" data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
+                    data-icon-size="sm"
                     data-total-field="total" data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-search="true"
                     data-side-pagination="server" data-pagination="true" data-sort-name="run_date" data-sort-order="desc"
                     data-trim-on-search="false" data-mobile-responsive="true" data-buttons-class="secondary"
@@ -251,6 +255,8 @@
                                 ' data-date="' + m.match_date + '"' +
                                 ' data-pma1="' + (m.pma1 || '') + '"' +
                                 ' data-pma2="' + (m.pma2 || '') + '"' +
+                                ' data-gates-opening="' + (m.gates_opening || '') + '"' +
+                                ' data-kick-off="' + (m.kick_off || '') + '"' +
                                 selected + '>' + label + '</option>'
                             );
                         });
@@ -276,7 +282,11 @@
                 var $opt = $(this).find('option:selected');
                 var $form = $(this).closest('form');
                 var date = $opt.data('date');
+                var gatesOpening = $opt.data('gates-opening');
+                var kickOff = $opt.data('kick-off');
                 if (date) $form.find('[name="run_date"]').val(date);
+                if (gatesOpening) $form.find('[name="gates_opening"]').val(gatesOpening);
+                if (kickOff) $form.find('[name="kick_off"]').val(kickOff);
                 fillTeams($form, $opt.data('pma1'), $opt.data('pma2'));
             });
 

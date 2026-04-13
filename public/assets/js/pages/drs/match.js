@@ -23,7 +23,7 @@ $(document).ready(function () {
             dataType: "json",
             success: function (response) {
                 console.log(response)
-                console.log('response.match_number: '+response.match_number);
+                console.log('response.match_number: '+response.match.match_number);
 
                 $("#edit_matches_id").val(response.match.id);
                 $("#edit_matches_venue_id").val(response.match.venue.id);
@@ -34,6 +34,8 @@ $(document).ready(function () {
                 $("#edit_matches_pma2").val(response.match.pma2);
                 $("#edit_matches_stage").val(response.match.stage);
                 $("#edit_matches_date").val(response.match_date);
+                $("#edit_gates_opening").val(response.match.gates_opening);
+                $("#edit_kick_off").val(response.match.kick_off);
                 $("#edit_matches_table").val(table);
                 if (fp) {
                     fp.setDate(response.match_date, true);

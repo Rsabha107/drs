@@ -70,6 +70,8 @@ class MatchController extends Controller
                 'pma1' => '<div class="align-middle white-space-wrap fs-9">' . $op->pma1 . '</div>',
                 'pma2' => '<div class="align-middle white-space-wrap fs-9">' . $op->pma2 . '</div>',
                 'match_date' => '<div class="align-middle white-space-wrap fs-9">' . format_date($op->match_date, 'Y-m-d') . '</div>',
+                'gates_opening' => '<span class="fs-9">' . ($op->gates_opening ? \Carbon\Carbon::parse($op->gates_opening)->format('H:i') : '-') . '</span>',
+                'kick_off' => '<span class="fs-9">' . ($op->kick_off ? \Carbon\Carbon::parse($op->kick_off)->format('H:i') : '-') . '</span>',
                 'created_at' => format_date($op->created_at,  'H:i:s'),
                 'updated_at' => format_date($op->updated_at, 'H:i:s'),
             ];
@@ -96,6 +98,8 @@ class MatchController extends Controller
             'pma2' => 'required',
             'stage' => 'required',
             'match_date' => 'required',
+            'gates_opening' => 'required',
+            'kick_off' => 'required',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -117,6 +121,8 @@ class MatchController extends Controller
             $op->pma2 = $request->pma2;
             $op->stage = $request->stage;
             $op->match_date = $request->match_date ? Carbon::createFromFormat('d/m/Y', $request->match_date)->toDateString() : null;
+            $op->gates_opening = $request->gates_opening;
+            $op->kick_off = $request->kick_off;
             $op->updated_by = $user_id;
 
             $op->save();
@@ -140,6 +146,8 @@ class MatchController extends Controller
             'pma2' => 'required',
             'stage' => 'required',
             'match_date' => 'required',
+            'gates_opening' => 'required',
+            'kick_off' => 'required',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -161,6 +169,8 @@ class MatchController extends Controller
             $op->pma2 = $request->pma2;
             $op->stage = $request->stage;
             $op->match_date = $request->match_date ? Carbon::createFromFormat('d/m/Y', $request->match_date)->toDateString() : null;
+            $op->gates_opening = $request->gates_opening;
+            $op->kick_off = $request->kick_off;
             $op->created_by = $user_id;
             $op->updated_by = $user_id;
 

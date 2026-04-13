@@ -60,6 +60,15 @@
                             type="text" placeholder="dd/mm/yyyy"
                             data-options='{"disableMobile":true,"dateFormat":"d/m/Y"}' readonly="readonly">
                     </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Gates Opening</label>
+                        <input type="time" name="gates_opening" class="form-control">
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Kick-Off</label>
+                        <input type="time" name="kick_off" class="form-control">
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -92,13 +101,15 @@
 
                 <div class="modal-body">
                     <div class="col-md-12 mb-3">
-                        <label for="edit_matches_event_name" class="form-label"><?= get_label('event', 'Event') ?> <span
-                                class="asterisk">*</span></label>
-                        <input disabled type="text" id="edit_matches_event_name" class="form-control" value="{{ $event->name }}"
+                        <label for="edit_matches_event_name" class="form-label"><?= get_label('event', 'Event') ?>
+                            <span class="asterisk">*</span></label>
+                        <input disabled type="text" id="edit_matches_event_name" class="form-control"
+                            value="{{ $event->name }}"
                             placeholder="<?= get_label('please_enter_event', 'Please enter event') ?>" />
                     </div>
                     <div class="col-12 gy-3 mb-3">
-                        <label class="form-label" for="edit_matches_venue_id">Venue<span class="asterisk">*</span></label>
+                        <label class="form-label" for="edit_matches_venue_id">Venue<span
+                                class="asterisk">*</span></label>
                         <select class="form-select" id="edit_matches_venue_id" name="venue_id" data-with="100%"
                             data-placeholder="<?= get_label('type_to_search', 'Type to search') ?>">
                             <!-- <select name="assignment_to_id[]" class="form-select" data-choices="data-choices" size="1" multiple="multiple" data-options='{"removeItemButton":true,"placeholder":true}' id="floatingSelectRating" required> -->
@@ -110,9 +121,11 @@
                         </select>
                     </div>
                     <div class="col-md-12 mb-3">
-                        <label for="edit_match_number" class="form-label"><?= get_label('match_number', 'Match Number') ?> <span
+                        <label for="edit_match_number"
+                            class="form-label"><?= get_label('match_number', 'Match Number') ?> <span
                                 class="asterisk">*</span></label>
-                        <input required type="text" id="edit_matches_number" class="form-control" name="match_number"
+                        <input required type="text" id="edit_matches_number" class="form-control"
+                            name="match_number"
                             placeholder="<?= get_label('please_enter_match_number', 'Please enter match number') ?>" />
                     </div>
                     <div class="col-md-12 mb-3">
@@ -135,10 +148,20 @@
                     </div>
                     {{-- date with d/m/yyyy format --}}
                     <div class="col-md-12 mb-3">
-                        <label class="form-label" for="edit_matches_date">Match Date<span class="asterisk">*</span></label>
-                        <input class="form-control datetimepicker flatpickr-input" id="edit_matches_date" name="match_date"
-                            type="text" placeholder="dd/mm/yyyy"
+                        <label class="form-label" for="edit_matches_date">Match Date<span
+                                class="asterisk">*</span></label>
+                        <input class="form-control datetimepicker flatpickr-input" id="edit_matches_date"
+                            name="match_date" type="text" placeholder="dd/mm/yyyy"
                             data-options='{"disableMobile":true,"dateFormat":"d/m/Y"}' readonly="readonly">
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label" for="edit_gates_opening">Gates Opening</label>
+                        <input type="time" id="edit_gates_opening" name="gates_opening" class="form-control">
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label" for="edit_kick_off">Kick-Off</label>
+                        <input type="time" id="edit_kick_off" name="kick_off" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -34,11 +34,16 @@ class DailyRunSheetController extends Controller
             $userFaIds = $userFas->pluck('id')->toArray();
         }
 
-        // Sheet types available to this user
+        // Sheet types available to this user but if SupreAdmin show all sheet types
         $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
         if ($user->hasRole('Customer')) {
             $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
         }
+
+        // $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
+        // if ($user->hasRole('Customer')) {
+        //     $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
+        // }
         $sheetTypes = $sheetTypesQuery->distinct()->orderBy('sheet_type')->pluck('sheet_type');
 
         return view('drs.drs.list', compact('event', 'matches', 'functionalAreas', 'userFaIds', 'userFas', 'sheetTypes'));
@@ -133,8 +138,8 @@ class DailyRunSheetController extends Controller
             'venue_id'           => 'required|integer',
             'sheet_type'         => 'required|string|max:50',
             'run_date'           => 'required|date',
-            'gates_opening'      => 'nullable|date_format:H:i',
-            'kick_off'           => 'nullable|date_format:H:i',
+            // 'gates_opening'      => 'nullable|date_format:H:i',
+            // 'kick_off'           => 'nullable|date_format:H:i',
             'match_id'           => 'nullable|integer',
             'functional_area_id' => 'nullable|integer',
         ]);
@@ -188,8 +193,6 @@ class DailyRunSheetController extends Controller
 
         return view('drs.drs.show', compact('sheet', 'canEdit'));
     }
-
-
 
     public function showList(Request $request, $id)
     {
@@ -280,8 +283,8 @@ class DailyRunSheetController extends Controller
             'venue_id'           => 'required|integer',
             'sheet_type'         => 'required|string|max:50',
             'run_date'           => 'required|date',
-            'gates_opening'      => 'nullable|date_format:H:i',
-            'kick_off'           => 'nullable|date_format:H:i',
+            // 'gates_opening'      => 'nullable|date_format:H:i',
+            // 'kick_off'           => 'nullable|date_format:H:i',
             'match_id'           => 'nullable|integer',
             'functional_area_id' => 'nullable|integer',
         ]);
@@ -574,7 +577,7 @@ class DailyRunSheetController extends Controller
         $matches = EventMatch::where('event_id', $eventId)
             ->where('venue_id', $venueId)
             ->orderBy('match_date')
-            ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2']);
+            ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2', 'gates_opening', 'kick_off']);
 
         return response()->json($matches);
     }

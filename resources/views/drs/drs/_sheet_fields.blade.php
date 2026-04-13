@@ -21,19 +21,6 @@
     </div>
 
     <div class="col-md-6">
-        <label class="form-label">Date <span class="text-danger">*</span></label>
-        <input type="date" id="{{ $prefix }}_drs_run_date" name="run_date" class="form-control" required>
-        <div class="invalid-feedback">Please enter a date.</div>
-    </div>
-
-
-    <div class="col-md-6">
-        <label class="form-label">Teams</label>
-        <input type="text" id="{{ $prefix }}_drs_teams" class="form-control" readonly
-            placeholder="— select a match —">
-    </div>
-
-    <div class="col-md-6">
         <label class="form-label">Sheet Type <span class="text-danger">*</span></label>
         <select name="sheet_type" class="form-select" required>
             <option value="">Select type</option>
@@ -48,10 +35,23 @@
         <label class="form-label">Functional Area <span class="text-muted small">(optional)</span></label>
         <select id="{{ $prefix }}_drs_functional_area_id" name="functional_area_id" class="form-select">
             <option value="">N/A</option>
-            @foreach ($functionalAreas ?? [] as $fa)
+            @foreach ($userFas ?? [] as $fa)
                 <option value="{{ $fa->id }}">{{ $fa->fa_code }} &mdash; {{ $fa->title }}</option>
             @endforeach
         </select>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label">Date <span class="text-danger">*</span></label>
+        <input type="date" id="{{ $prefix }}_drs_run_date" name="run_date" class="form-control" required>
+        <div class="invalid-feedback">Please enter a date.</div>
+    </div>
+
+
+    <div class="col-md-6">
+        <label class="form-label">Teams</label>
+        <input type="text" id="{{ $prefix }}_drs_teams" class="form-control" readonly
+            placeholder="— select a match —">
     </div>
 
     <div class="col-md-6">

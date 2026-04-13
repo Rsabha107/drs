@@ -13,15 +13,36 @@ use App\Models\Drs\EventMatch;
 use App\Models\Drs\FunctionalArea;
 use App\Models\Drs\Venue;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DailyRunSheetController extends Controller
 {
     public function index()
     {
+
+        $user = Auth::user();
+
+        $userFaIds = [];
+        $userFas   = collect();
+        if ($user->hasRole('Customer')) {
+            $userFas   = $user->fa()->get(['functional_areas.id', 'functional_areas.title', 'functional_areas.fa_code']);
+            $userFaIds = $userFas->pluck('id')->toArray();
+        }elseif ($user->hasRole('SuperAdmin')) {
+            $userFas   = FunctionalArea::orderBy('fa_code')->get();
+            $userFaIds = $userFas->pluck('id')->toArray();
+        }
+
         $event = Event::findOrFail(session()->get('EVENT_ID'));
         $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
+        // Sheet types available to this user but if SupreAdmin show all sheet types
+        $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
+        if ($user->hasRole('Customer')) {
+            $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
+        }
 
-        return view('drs.drs.list', compact('event', 'functionalAreas'));
+        $sheetTypes = $sheetTypesQuery->pluck('sheet_type')->filter()->unique()->sort()->values();
+
+        return view('drs.drs.list', compact('event', 'functionalAreas', 'userFaIds', 'userFas', 'sheetTypes'));
     }
 
     public function list(Request $request)
@@ -118,7 +139,15 @@ class DailyRunSheetController extends Controller
         }
 
         return view('drs.admin.report.flat-list', compact(
-            'event', 'venues', 'matches', 'matchHeader', 'venueId', 'matchId', 'sheets', 'sheetTypes', 'sheetType'
+            'event',
+            'venues',
+            'matches',
+            'matchHeader',
+            'venueId',
+            'matchId',
+            'sheets',
+            'sheetTypes',
+            'sheetType'
         ));
     }
 

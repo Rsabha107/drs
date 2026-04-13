@@ -41,7 +41,8 @@
                             <th data-sortable="true" data-field="pma2" ><?= get_label('pma2', 'PMA2') ?></th>
                             <th data-sortable="true" data-field="stage" ><?= get_label('stage', 'Stage') ?></th>
                             <th data-sortable="true" data-field="match_date" ><?= get_label('match_date', 'Match Date') ?></th>
-                            <!-- <th data-sortable="true" data-field="location_id"><?= get_label('location', 'Location') ?></th> -->
+                            <th data-sortable="true" data-field="gates_opening" ><?= get_label('gates_opening', 'Gates Opening') ?></th>
+                            <th data-sortable="true" data-field="kick_off" ><?= get_label('kick_off', 'Kick Off') ?></th>
                             <th data-sortable="true" data-field="created_at" data-visible="false"><?= get_label('created_at', 'Created at') ?></th>
                             <th data-sortable="true" data-field="updated_at" data-visible="false"><?= get_label('updated_at', 'Updated at') ?></th>
                             <th data-formatter="actionsFormatter" class="text-end"><?= get_label('actions', 'Actions') ?></th>
