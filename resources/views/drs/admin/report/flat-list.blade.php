@@ -106,7 +106,7 @@
             <form method="GET" action="{{ route('drs.admin.flat.list') }}" id="filter_form"
                 class="filter-bar mb-4 no-print">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-semibold mb-1">Venue</label>
                         <select name="venue_id" id="venue_select" class="form-select form-select-sm">
                             <option value="">— Select Venue —</option>
@@ -117,7 +117,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-semibold mb-1">Match</label>
                         <select name="match_id" id="match_select" class="form-select form-select-sm"
                             {{ !$venueId ? 'disabled' : '' }}>
@@ -131,16 +131,28 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold mb-1">Sheet Type</label>
+                        <select name="sheet_type" id="sheet_type_select" class="form-select form-select-sm"
+                            {{ !$matchId ? 'disabled' : '' }}>
+                            <option value="">— All Types —</option>
+                            @foreach ($sheetTypes ?? [] as $st)
+                                <option value="{{ $st }}" {{ ($sheetType ?? '') == $st ? 'selected' : '' }}>
+                                    {{ $st }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-sm btn-primary w-100">
                             <i class="fa-solid fa-magnifying-glass me-1"></i>Apply
                         </button>
                     </div>
-                    @if ($venueId || $matchId)
-                        <div class="col-md-2">
+                    @if ($venueId || $matchId || ($sheetType ?? null))
+                        <div class="col-md-1">
                             <a href="{{ route('drs.admin.flat.list') }}"
-                                class="btn btn-sm btn-outline-secondary w-100">
-                                <i class="fa-solid fa-xmark me-1"></i>Clear
+                                class="btn btn-sm btn-outline-secondary w-100" title="Clear filters">
+                                <i class="fa-solid fa-xmark"></i>
                             </a>
                         </div>
                     @endif
@@ -214,6 +226,7 @@
                         data-trim-on-search="false" data-mobile-responsive="true"
                         data-buttons-class="secondary"
                         data-row-style="itemRowStyle"
+                        data-show-pagination-switch="true"
                         data-query-params="queryParams">
                         <thead>
                             <tr>
@@ -400,13 +413,42 @@
     </div>
     @endif
 
-    {{-- ── Venue → Match dynamic loader ──────────────────────────────────── --}}
+    {{-- ── Venue → Match → Sheet Type dynamic loaders ─────────────────── --}}
     <script>
+        function resetSheetTypeSelect() {
+            var stSelect = document.getElementById('sheet_type_select');
+            stSelect.innerHTML = '<option value="">— All Types —</option>';
+            stSelect.disabled  = true;
+        }
+
+        function loadSheetTypes(venueId, matchId) {
+            var stSelect = document.getElementById('sheet_type_select');
+            stSelect.innerHTML = '<option value="">— Loading… —</option>';
+            stSelect.disabled  = true;
+            fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId + '&match_id=' + matchId)
+                .then(function (r) { return r.json(); })
+                .then(function (types) {
+                    stSelect.innerHTML = '<option value="">— All Types —</option>';
+                    types.forEach(function (t) {
+                        var opt = document.createElement('option');
+                        opt.value       = t;
+                        opt.textContent = t;
+                        stSelect.appendChild(opt);
+                    });
+                    stSelect.disabled = types.length === 0;
+                })
+                .catch(function () {
+                    stSelect.innerHTML = '<option value="">— All Types —</option>';
+                    stSelect.disabled  = true;
+                });
+        }
+
         document.getElementById('venue_select').addEventListener('change', function () {
             var venueId     = this.value;
             var matchSelect = document.getElementById('match_select');
             matchSelect.innerHTML = '<option value="">— Loading… —</option>';
             matchSelect.disabled  = true;
+            resetSheetTypeSelect();
             if (!venueId) {
                 matchSelect.innerHTML = '<option value="">— Select Match —</option>';
                 return;
@@ -429,6 +471,13 @@
                     matchSelect.innerHTML = '<option value="">— Error loading matches —</option>';
                 });
         });
+
+        document.getElementById('match_select').addEventListener('change', function () {
+            var matchId = this.value;
+            var venueId = document.getElementById('venue_select').value;
+            if (!matchId) { resetSheetTypeSelect(); return; }
+            loadSheetTypes(venueId, matchId);
+        });
     </script>
 
 @endsection
@@ -437,6 +486,7 @@
 <script>
     var venueId   = '{{ $venueId ?? '' }}';
     var matchId   = '{{ $matchId ?? '' }}';
+    var sheetType = '{{ $sheetType ?? '' }}';
     var koTime    = '{{ $koFormatted ?? '' }}';
     var csrfToken = '{{ csrf_token() }}';
 
@@ -447,13 +497,15 @@
         toggleOff:  'bx-toggle-left',
         fullscreen: 'bx-fullscreen',
         columns:    'bx-list-ul',
+        paginationSwitchDown: 'bx-sort-down',
+        paginationSwitchUp:   'bx-sort-up'
     };
 
     function loadingTemplate() {
         return '<i class="bx bx-loader-alt bx-spin bx-flip-vertical"></i>';
     }
 
-                function queryParams(p) {
+    function queryParams(p) {
             return {
                 page: p.offset / p.limit + 1,
                 limit: p.limit,
@@ -461,18 +513,11 @@
                 order: p.order,
                 offset: p.offset,
                 search: p.search,
-                // venue_id: $('#venue_select').val(),
-                // match_id: $('#match_select').val(),
                 venue_id: venueId,
                 match_id: matchId,
-                sheet_type: $('#match_select').val(),
-                functional_area_id: $('#filter_functional_area').val(),
+                sheet_type: $('#sheet_type_select').val() || sheetType,
             };
         }
-
-    // function queryParams(p) {
-    //     return $.extend({}, p, { venue_id: venueId, match_id: matchId });
-    // }
 
 
     function itemRowStyle(row) {

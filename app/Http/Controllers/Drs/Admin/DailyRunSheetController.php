@@ -88,7 +88,9 @@ class DailyRunSheetController extends Controller
                 ->get();
         }
 
-        $sheets = collect();
+        $sheets     = collect();
+        $sheetTypes = collect();
+        $sheetType  = $request->input('sheet_type');
 
         if ($venueId && $matchId) {
             $sheets = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'items'])
@@ -96,6 +98,8 @@ class DailyRunSheetController extends Controller
                 ->where('venue_id', $venueId)
                 ->where('match_id', $matchId)
                 ->get();
+
+            $sheetTypes = $sheets->pluck('sheet_type')->filter()->unique()->sort()->values();
 
             $firstSheet = $sheets->first();
             if ($firstSheet) {
@@ -114,8 +118,26 @@ class DailyRunSheetController extends Controller
         }
 
         return view('drs.admin.report.flat-list', compact(
-            'event', 'venues', 'matches', 'matchHeader', 'venueId', 'matchId', 'sheets'
+            'event', 'venues', 'matches', 'matchHeader', 'venueId', 'matchId', 'sheets', 'sheetTypes', 'sheetType'
         ));
+    }
+
+    public function sheetTypesByMatch(Request $request)
+    {
+        $eventId = session()->get('EVENT_ID');
+        $venueId = $request->input('venue_id');
+        $matchId = $request->input('match_id');
+
+        $types = DailyRunSheet::where('event_id', $eventId)
+            ->when($venueId, fn($q) => $q->where('venue_id', $venueId))
+            ->when($matchId, fn($q) => $q->where('match_id', $matchId))
+            ->orderBy('sheet_type')
+            ->pluck('sheet_type')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return response()->json($types);
     }
 
     public function flatListData(Request $request)
@@ -133,10 +155,13 @@ class DailyRunSheetController extends Controller
             $sort = 'start_time';
         }
 
+        $sheetType = $request->input('sheet_type');
+
         // Collect run sheet IDs for this event+venue+match
         $sheetIds = DailyRunSheet::where('event_id', $eventId)
             ->when($venueId, fn($q) => $q->where('venue_id', $venueId))
             ->when($matchId, fn($q) => $q->where('match_id', $matchId))
+            ->when($sheetType, fn($q) => $q->where('sheet_type', $sheetType))
             ->pluck('id');
 
         // Get the KO time from the first matching sheet
