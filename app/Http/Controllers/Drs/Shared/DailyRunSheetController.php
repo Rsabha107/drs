@@ -140,6 +140,10 @@ class DailyRunSheetController extends Controller
             'created_by'         => Auth::id(),
         ]);
 
+        if ($request->sheet_type === 'MD') {
+            $this->populateMdTemplate($sheet->id);
+        }
+
         return response()->json([
             'error'    => false,
             'message'  => 'Daily Run Sheet created successfully.',
@@ -440,6 +444,58 @@ class DailyRunSheetController extends Controller
         return redirect()->route('drs.drs.show', $sheetId)
             ->with('message', 'Item deleted.')
             ->with('alert-type', 'success');
+    }
+
+    // ── MD Template ─────────────────────────────────────────────────────────
+
+    private function populateMdTemplate(int $runSheetId): void
+    {
+        $now = now();
+        $items = [
+            ['title' => 'Workforce & Metro PSA Operational',                                                                             'row_color' => 'red',     'sort_order' => 10],
+            ['title' => 'Venue Team Meeting',                                                                                            'row_color' => 'default', 'sort_order' => 20],
+            ['title' => 'Temporary Traffic management & control measures on site as per agreed plans - Close Roads near stadium as per plans', 'row_color' => 'default', 'sort_order' => 30],
+            ['title' => 'VOC OPEN',                                                                                                      'row_color' => 'default', 'sort_order' => 40],
+            ['title' => 'TETRA CHECK',                                                                                                   'row_color' => 'default', 'sort_order' => 50],
+            ['title' => '24h to GO - Ensure operational readiness in all areas and report any issues to VOC - KO-8',                     'row_color' => 'yellow',  'sort_order' => 60],
+            ['title' => 'Accreditation Zoning Activation: KO-8',                                                                        'row_color' => 'red',     'sort_order' => 70],
+            ['title' => 'MatchDay',                                                                                                      'row_color' => 'red',     'sort_order' => 80],
+            ['title' => '30M to GO - Ensure operational readiness: KO -35',                                                             'row_color' => 'yellow',  'sort_order' => 90],
+            ['title' => 'Frely Floodlights ON',                                                                                          'row_color' => 'default', 'sort_order' => 100],
+            ['title' => 'GATES OPEN',                                                                                                    'row_color' => 'default', 'sort_order' => 110],
+            ['title' => 'Fan Zone is Operational',                                                                                       'row_color' => 'default', 'sort_order' => 120],
+            ['title' => 'TEAM B KIT VAN ARRIVAL',                                                                                        'row_color' => 'default', 'sort_order' => 130],
+            ['title' => 'TEAM A KIT VAN ARRIVAL',                                                                                        'row_color' => 'default', 'sort_order' => 140],
+            ['title' => 'TEAM A ARRIVAL',                                                                                                'row_color' => 'default', 'sort_order' => 150],
+            ['title' => 'TEAM B ARRIVAL',                                                                                                'row_color' => 'default', 'sort_order' => 160],
+            ['title' => 'Fan Zone is closed',                                                                                            'row_color' => 'default', 'sort_order' => 170],
+            ['title' => 'Warm Up starts',                                                                                                'row_color' => 'default', 'sort_order' => 180],
+            ['title' => 'Warm Up Finishes',                                                                                              'row_color' => 'default', 'sort_order' => 190],
+            ['title' => 'Commentary starts',                                                                                             'row_color' => 'default', 'sort_order' => 200],
+            ['title' => 'KICK OFF',                                                                                                      'row_color' => 'green',   'sort_order' => 210],
+            ['title' => 'END OF FIRST HALF',                                                                                             'row_color' => 'default', 'sort_order' => 220],
+            ['title' => 'START OF SECOND HALF',                                                                                          'row_color' => 'red',     'sort_order' => 230],
+            ['title' => 'All Parkings ready for Egress Operation',                                                                       'row_color' => 'default', 'sort_order' => 240],
+            ['title' => 'Official Match Attendance announcement',                                                                        'row_color' => 'yellow',  'sort_order' => 250],
+            ['title' => 'Redeployment + Egress postmatch',                                                                               'row_color' => 'default', 'sort_order' => 260],
+            ['title' => 'Egress Gates open',                                                                                             'row_color' => 'yellow',  'sort_order' => 270],
+            ['title' => 'Final Whistle',                                                                                                 'row_color' => 'green',   'sort_order' => 280],
+            ['title' => 'Fan Zone is Operational',                                                                                       'row_color' => 'default', 'sort_order' => 290],
+            ['title' => 'Post match Press Conference',                                                                                   'row_color' => 'default', 'sort_order' => 300],
+            ['title' => 'TEAM A has left the stadium',                                                                                   'row_color' => 'default', 'sort_order' => 310],
+            ['title' => 'Team B has left the stadium',                                                                                   'row_color' => 'default', 'sort_order' => 320],
+            ['title' => 'Referees have left the stadium',                                                                                'row_color' => 'default', 'sort_order' => 330],
+            ['title' => 'Accreditation zoning deactivation',                                                                             'row_color' => 'default', 'sort_order' => 340],
+            ['title' => 'VOC close/End of Operations',                                                                                   'row_color' => 'default', 'sort_order' => 350],
+        ];
+
+        $rows = array_map(fn($item) => array_merge($item, [
+            'run_sheet_id' => $runSheetId,
+            'created_at'   => $now,
+            'updated_at'   => $now,
+        ]), $items);
+
+        DailyRunSheetItem::insert($rows);
     }
 
     // ── Matches by Venue ─────────────────────────────────────────────────────
