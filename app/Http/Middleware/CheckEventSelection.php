@@ -26,7 +26,7 @@ class CheckEventSelection
                     // Log::info('CheckEventSelection: SuperAdmin - setting EVENT_ID to Admin');
                     // Log::info('CheckEventSelection: EVENT_ID set to '. session()->get('EVENT_ID'));
                     // Log::info('CheckEventSelection: Redirecting to admin report drs.admin.report');
-                    return redirect()->route('drs.admin.report');
+                    return redirect()->route('drs.admin.drs');
                 } elseif (auth()->user()->hasRole('Customer')) {
                     return redirect()->route('drs.customer.report.pick');
                 } else {

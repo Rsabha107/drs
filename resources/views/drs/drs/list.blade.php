@@ -26,10 +26,10 @@
                     <option value="{{ $fa->id }}">{{ $fa->title }}</option>
                 @endforeach
             </select> --}}
-            {{-- <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
+            <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
                 data-bs-target="#create_drs_modal">
                 <i class="fa-solid fa-plus me-1"></i>New Run Sheet
-            </button> --}}
+            </button>
             <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
                 <i class="fa-solid fa-eye me-1"></i>Admin View
             </a>
@@ -48,10 +48,10 @@
 
                 <div id="toolbar">
                     <div class="d-flex gap-2 align-items-center">
-                        <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
+                        {{-- <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
                             data-bs-target="#create_drs_modal">
                             <i class="fa-solid fa-plus me-1"></i>New Run Sheet
-                        </button>
+                        </button> --}}
                         <select id="filter_venue" class="form-select form-select-sm" style="width:160px;">
                             <option value="">All Venues</option>
                             @foreach ($event->venues as $v)
