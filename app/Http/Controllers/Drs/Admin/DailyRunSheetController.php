@@ -148,7 +148,8 @@ class DailyRunSheetController extends Controller
 
         $sort  = $request->input('sort', 'start_time');
         $order = $request->input('order', 'asc');
-        $limit = max(1, min((int) $request->input('limit', 25), 500));
+        $rawLimit = (int) $request->input('limit', 25);
+        $limit    = $rawLimit >= 10000 ? 10000 : max(1, min($rawLimit, 500));
 
         $allowedSorts = ['id', 'title', 'start_time', 'end_time', 'countdown_to_ko', 'location'];
         if (!in_array($sort, $allowedSorts)) {
