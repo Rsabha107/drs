@@ -20,13 +20,28 @@ class DailyRunSheetController extends Controller
 {
     public function index()
     {
-        //check whitch role is logged in and return view accordingly
-
         $event = Event::findOrFail(session()->get('EVENT_ID'));
         $matches = EventMatch::where('event_id', $event->id)->orderBy('match_date')->get();
         $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
 
-        return view('drs.drs.list', compact('event', 'matches', 'functionalAreas'));
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $userFaIds = [];
+        $userFas   = collect();
+        if ($user->hasRole('Customer')) {
+            $userFas   = $user->fa()->get(['functional_areas.id', 'functional_areas.title', 'functional_areas.fa_code']);
+            $userFaIds = $userFas->pluck('id')->toArray();
+        }
+
+        // Sheet types available to this user
+        $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
+        if ($user->hasRole('Customer')) {
+            $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
+        }
+        $sheetTypes = $sheetTypesQuery->distinct()->orderBy('sheet_type')->pluck('sheet_type');
+
+        return view('drs.drs.list', compact('event', 'matches', 'functionalAreas', 'userFaIds', 'userFas', 'sheetTypes'));
     }
 
     public function list(Request $request)
@@ -43,15 +58,18 @@ class DailyRunSheetController extends Controller
             $sort = 'run_date';
         }
 
-        if (Auth::user()->hasRole('Customer')) {
-            // get only sheets that are assigned to the functional areas of the user
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->hasRole('Customer')) {
+            // Customer sees only their own FA's sheets
             $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
                 ->where('event_id', $eventId)
-                ->whereHas('functionalArea', function ($q) {
-                    $q->whereIn('id', Auth::user()->fa->pluck('id'));
+                ->whereHas('functionalArea', function ($q) use ($user) {
+                    $q->whereIn('id', $user->fa->pluck('id'));
                 });
-        } elseif (Auth::user()->hasRole('SuperAdmin')) {
-            // get all sheets for the event
+        } elseif ($user->hasRole('SuperAdmin')) {
+            // SuperAdmin sees all sheets for the event
             $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
                 ->where('event_id', $eventId);
         } else {
@@ -160,11 +178,15 @@ class DailyRunSheetController extends Controller
         $user = Auth::user();
 
         if ($user->hasRole('Customer')) {
+            // Customer may only open a sheet that belongs to their own FA
             $userFaIds = $user->fa()->pluck('functional_areas.id');
             abort_unless($userFaIds->contains($sheet->functional_area_id), 403);
+            $canEdit = true; // it's their sheet — they can add items and action their own rows
+        } else {
+            $canEdit = $user->hasRole('SuperAdmin');
         }
 
-        return view('drs.drs.show', compact('sheet'));
+        return view('drs.drs.show', compact('sheet', 'canEdit'));
     }
 
 
@@ -178,13 +200,11 @@ class DailyRunSheetController extends Controller
             ->where('event_id', $eventId)
             ->firstOrFail();
 
-        // For Customer: verify the sheet belongs to one of their functional areas
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        if ($user->hasRole('Customer')) {
-            $userFaIds = $user->fa()->pluck('functional_areas.id');
-            abort_unless($userFaIds->contains($sheet->functional_area_id), 403);
-        }
+        /** @var \App\Models\User $authUser */
+        $authUser  = Auth::user();
+        $userFaIds = $authUser->hasRole('Customer')
+            ? $authUser->fa()->pluck('functional_areas.id')->toArray()
+            : [];
 
         $sort  = $request->input('sort', 'start_time');
         $order = $request->input('order', 'asc');
@@ -195,29 +215,39 @@ class DailyRunSheetController extends Controller
             $sort = 'start_time';
         }
 
-        $query = DailyRunSheetItem::where('run_sheet_id', $sheet->id);
-
+        // Show all items from every sheet that shares the same sheet_type within this event
+        $query = DailyRunSheetItem::with('runSheet.functionalArea')
+            ->whereHas('runSheet', function ($q) use ($eventId, $sheet) {
+                $q->where('event_id', $eventId)
+                  ->where('sheet_type', $sheet->sheet_type);
+            });
 
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('sheet_type', 'like', "%{$s}%")
-                    ->orWhere('run_date', 'like', "%{$s}%")
-                    ->orWhereHas('venue', fn($q2) => $q2->where('short_name', 'like', "%{$s}%"));
+                $q->where('title', 'like', "%{$s}%")
+                    ->orWhere('location', 'like', "%{$s}%")
+                    ->orWhere('description', 'like', "%{$s}%");
             });
         }
 
         $total = $query->count();
-        $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($s) {
+        $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($item) use ($authUser, $userFaIds) {
+            $sheetFaId = $item->runSheet?->functional_area_id;
+            $canEdit   = $authUser->hasRole('SuperAdmin')
+                || ($sheetFaId && in_array($sheetFaId, $userFaIds));
+
             return [
-                'id'            => $s->id,
-                'title'    => '<span class="fs-9 ps-3">' . e($s->title) . '</span>',
-                'start_time'         => '<span class="fs-9">' . e($s->start_time ?? '-') . '</span>',
-                'countdown_to_ko'      => '<span class="fs-9">' . e($s->countdown_to_ko) . '</span>',
-                'end_time' => '<span class="fs-9">' . e($s->end_time ?? '-') . '</span>',
-                'functional_area' => '<span class="fs-9">' . e($s->runSheet->functionalArea->title ?? '-') . '</span>',
-                'location' => '<span class="fs-9">' . e($s->location ?? '-') . '</span>',
-                'description' => '<span class="fs-9">' . e($s->description ?? '-') . '</span>',
+                'id'              => $item->id,
+                'title'           => '<span class="fs-9 ps-3">' . e($item->title) . '</span>',
+                'start_time'      => '<span class="fs-9">' . e($item->start_time ?? '-') . '</span>',
+                'countdown_to_ko' => '<span class="fs-9">' . e($item->countdown_to_ko) . '</span>',
+                'end_time'        => '<span class="fs-9">' . e($item->end_time ?? '-') . '</span>',
+                'functional_area' => '<span class="fs-9">' . e($item->runSheet?->functionalArea?->title ?? '-') . '</span>',
+                'location'        => '<span class="fs-9">' . e($item->location ?? '-') . '</span>',
+                'description'     => '<span class="fs-9">' . e($item->description ?? '-') . '</span>',
+                'row_color'       => $item->row_color,
+                'can_edit'        => $canEdit,
             ];
         });
 
@@ -315,6 +345,17 @@ class DailyRunSheetController extends Controller
             'sort_order'      => 'nullable|integer',
             'countdown_to_ko'  => 'nullable|string',
         ]);
+
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
+        if ($authUser->hasRole('Customer')) {
+            $parentSheet = DailyRunSheet::findOrFail($request->run_sheet_id);
+            abort_unless(
+                $parentSheet->functional_area_id &&
+                $authUser->fa()->where('functional_areas.id', $parentSheet->functional_area_id)->exists(),
+                403
+            );
+        }
 
         $item = DailyRunSheetItem::create($request->only([
             'run_sheet_id',
@@ -444,6 +485,33 @@ class DailyRunSheetController extends Controller
         return redirect()->route('drs.drs.show', $sheetId)
             ->with('message', 'Item deleted.')
             ->with('alert-type', 'success');
+    }
+
+    public function itemDuplicate($id)
+    {
+        $item = DailyRunSheetItem::with('runSheet')->findOrFail($id);
+        $this->authorize('update', $item);
+
+        $copy = $item->replicate();
+        $copy->title = $item->title . ' (Copy)';
+        $copy->save();
+
+        return response()->json([
+            'error'   => false,
+            'message' => 'Item duplicated.',
+            'item'    => [
+                'id'              => $copy->id,
+                'title'           => $copy->title,
+                'start_time'      => $copy->start_time ? Carbon::parse($copy->start_time)->format('H:i') : '',
+                'end_time'        => $copy->end_time ? Carbon::parse($copy->end_time)->format('H:i') : '',
+                'countdown_to_ko' => $copy->countdown_to_ko ?? '',
+                'functional_area' => $copy->functional_area ?? '',
+                'location'        => $copy->location ?? '',
+                'description'     => $copy->description ?? '',
+                'row_color'       => $copy->row_color,
+                'sort_order'      => $copy->sort_order,
+            ],
+        ]);
     }
 
     // ── MD Template ─────────────────────────────────────────────────────────

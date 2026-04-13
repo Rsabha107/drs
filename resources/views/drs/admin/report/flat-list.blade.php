@@ -497,8 +497,8 @@
         toggleOff:  'bx-toggle-left',
         fullscreen: 'bx-fullscreen',
         columns:    'bx-list-ul',
-        paginationSwitchDown: 'bx-sort-down',
-        paginationSwitchUp:   'bx-sort-up'
+        paginationSwitchDown: 'bx-caret-down',
+        paginationSwitchUp:   'bx-caret-up'
     };
 
     function loadingTemplate() {

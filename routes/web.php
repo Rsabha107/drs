@@ -236,6 +236,7 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::get('/drs/drs/items/{id}/edit',          'itemEdit')->name('drs.drs.item.edit');
         Route::post('/drs/drs/items/update',            'itemUpdate')->name('drs.drs.item.update');
         Route::delete('/drs/drs/items/{id}',            'itemDestroy')->name('drs.drs.item.destroy');
+        Route::post('/drs/drs/items/{id}/duplicate',   'itemDuplicate')->name('drs.drs.item.duplicate');
     });
 
     Route::controller(SharedVenueMatchReportController::class)->group(function () {

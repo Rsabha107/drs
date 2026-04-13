@@ -6,6 +6,13 @@
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                 <li class="breadcrumb-item active">Daily Run Sheets</li>
             </ol>
+            @if($userFas->isNotEmpty())
+                <div class="mt-1 d-flex flex-wrap gap-1">
+                    @foreach($userFas as $fa)
+                        <span class="badge bg-primary">{{ $fa->fa_code }} &mdash; {{ $fa->title }}</span>
+                    @endforeach
+                </div>
+            @endif
         </nav>
         <div class="d-flex gap-2 align-items-center">
             {{-- <select id="filter_venue" class="form-select form-select-sm" style="width:160px;">
@@ -30,12 +37,14 @@
                 data-bs-target="#create_drs_modal">
                 <i class="fa-solid fa-plus me-1"></i>New Run Sheet
             </button>
+            @unless(auth()->user()->hasRole('Customer'))
             <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
                 <i class="fa-solid fa-eye me-1"></i>Admin View
             </a>
             <a href="{{ route('drs.admin.flat.list') }}" class="btn btn-success">
                 <i class="fa-solid fa-eye me-1"></i>Combined List View
             </a>
+            @endunless
         </div>
     </div>
 
@@ -60,13 +69,13 @@
                         </select>
                         <select id="filter_type" class="form-select form-select-sm" style="width:140px;">
                             <option value="">All Types</option>
-                            @foreach (['MD-3', 'MD-2', 'MD-1', 'MD', 'MD FINAL', 'MD+1'] as $t)
+                            @foreach ($sheetTypes as $t)
                                 <option>{{ $t }}</option>
                             @endforeach
                         </select>
                         <select id="filter_functional_area" class="form-select form-select-sm" style="width:160px;">
                             <option value="">All Func. Areas</option>
-                            @foreach ($functionalAreas ?? [] as $fa)
+                            @foreach ($userFas->isNotEmpty() ? $userFas : ($functionalAreas ?? collect()) as $fa)
                                 <option value="{{ $fa->id }}">{{ $fa->title }}</option>
                             @endforeach
                         </select>

@@ -114,12 +114,15 @@
             </ol>
         </nav>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-subtle-success" data-bs-toggle="modal" data-bs-target="#add_item_modal">
-                <i class="fa-solid fa-plus me-1"></i>Add Item
-            </button>
-            <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
-                <i class="fa-solid fa-pen me-1"></i>Edit Header
-            </button>
+            @if ($canEdit)
+                <button type="button" class="btn btn-subtle-success" data-bs-toggle="modal"
+                    data-bs-target="#add_item_modal">
+                    <i class="fa-solid fa-plus me-1"></i>Add Item
+                </button>
+                <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
+                    <i class="fa-solid fa-pen me-1"></i>Edit Header
+                </button>
+            @endif
             <a href="{{ route('drs.drs.export', $sheet->id) }}" class="btn btn-subtle-primary">
                 <i class="fa-solid fa-file-excel me-1"></i>Export Excel
             </a>
@@ -153,7 +156,8 @@
                     </tr>
                     <tr>
                         <td>Team</td>
-                        <td id="show-team">{{ $sheet->match ? $sheet->match->pma1 . ' vs ' . $sheet->match->pma2 : 'N/A' }}</td>
+                        <td id="show-team">{{ $sheet->match ? $sheet->match->pma1 . ' vs ' . $sheet->match->pma2 : 'N/A' }}
+                        </td>
                     </tr>
                     <tr>
                         <td>Gates Opening</td>
@@ -179,18 +183,19 @@
                 <div class="table-responsive">
                     <table id="items_table" data-toggle="table"
                         data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
-                        data-loading-template="loadingTemplate" data-url="{{ route('drs.show.list', $sheet->id) }}"
-                        data-icons-prefix="bx" data-icons="icons" data-show-refresh="true" data-show-columns="true"
-                        data-show-toggle="true" data-total-field="total" data-height="500" data-show-fullscreen="true"
-                        data-fixed-scroll="true" data-data-field="rows" data-page-list="[10, 20, 50, 100]"
-                        data-search="true" data-side-pagination="server" data-pagination="true" data-sort-name="start_time"
-                        data-sort-order="desc" data-trim-on-search="false" data-mobile-responsive="true"
-                        data-buttons-class="secondary" data-query-params="queryParams">
+                        data-row-style="itemRowStyle" data-loading-template="loadingTemplate"
+                        data-url="{{ route('drs.show.list', $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
+                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true" data-total-field="total"
+                        data-height="500" data-show-fullscreen="true" data-fixed-scroll="true" data-data-field="rows"
+                        data-page-list="[10, 20, 50, 100]" data-search="true" data-side-pagination="server"
+                        data-pagination="true" data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
+                        data-show-pagination-switch="true" data-mobile-responsive="true" data-buttons-class="secondary"
+                        data-query-params="queryParams">
                         <thead>
                             <tr>
                                 <th data-field="id" data-sortable="true" data-visible="false">ID</th>
                                 <th data-field="title" data-sortable="true">Title</th>
-                                <th data-field="start_time" data-sortable="false">Start Time</th>
+                                <th data-field="start_time" data-sortable="true">Start Time</th>
                                 <th data-field="countdown_to_ko" data-sortable="true">Countdown</th>
                                 <th data-field="end_time" data-sortable="true">End Time</th>
                                 <th data-field="functional_area" data-sortable="true">Functional Area</th>
@@ -209,11 +214,13 @@
 
 
         </div>
-        <div class="card-footer no-print d-flex justify-content-end">
-            <button type="button" class="btn btn-sm btn-phoenix-danger" id="delete_sheet_btn">
-                <i class="fa-solid fa-trash me-1"></i>Delete Run Sheet
-            </button>
-        </div>
+        @if ($canEdit)
+            <div class="card-footer no-print d-flex justify-content-end">
+                <button type="button" class="btn btn-sm btn-phoenix-danger" id="delete_sheet_btn">
+                    <i class="fa-solid fa-trash me-1"></i>Delete Run Sheet
+                </button>
+            </div>
+        @endif
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════
@@ -417,7 +424,7 @@
             </div>
         </div>
     </div>
-            {{-- // var itemsData = {!! $itemsJson !!}; --}}
+    {{-- // var itemsData = {!! $itemsJson !!}; --}}
 @endsection
 
 @push('script')
@@ -437,13 +444,15 @@
                 functional_area_id: $('#filter_functional_area').val(),
             };
         }
-        
+
         var icons = {
             refresh: 'bx-refresh',
             toggleOn: 'bx-toggle-right',
             toggleOff: 'bx-toggle-left',
             fullscreen: 'bx-fullscreen',
             columns: 'bx-list-ul',
+            paginationSwitchDown: 'bx-caret-down',
+            paginationSwitchUp: 'bx-caret-up'
         };
 
         function loadingTemplate() {
@@ -462,7 +471,13 @@
                     classes: 'color-green'
                 },
             };
-            return map[row.row_color] || {};
+            var style = map[row.row_color] || {};
+            if (!row.can_edit) {
+                style.css = Object.assign({}, style.css, {
+                    opacity: '0.45'
+                });
+            }
+            return style;
         }
 
         function koOffsetFormatter(value, row) {
@@ -471,15 +486,14 @@
         }
 
         function itemActionsFormatter(value, row) {
+            if (!row.can_edit) return '';
             return [
                 '<button type="button" class="btn btn-sm btn-phoenix-warning me-1 item-edit" data-id="' + row.id +
-                '" title="Edit">',
-                '<i class="fa-solid fa-pen"></i>',
-                '</button>',
+                '" title="Edit"><i class="fa-solid fa-pen"></i></button>',
+                '<button type="button" class="btn btn-sm btn-phoenix-info me-1 item-duplicate" data-id="' + row.id +
+                '" title="Duplicate"><i class="fa-solid fa-copy"></i></button>',
                 '<button type="button" class="btn btn-sm btn-phoenix-danger item-delete" data-id="' + row.id +
-                '" title="Delete">',
-                '<i class="fa-solid fa-trash"></i>',
-                '</button>',
+                '" title="Delete"><i class="fa-solid fa-trash"></i></button>',
             ].join('');
         }
 
@@ -899,6 +913,41 @@
             });
         });
 
+        // ── Duplicate item ──────────────────────────────────────────────
+        $('body').on('click', '.item-duplicate', function() {
+            var id = $(this).data('id');
+            var $btn = $(this);
+            var originalHtml = $btn.html();
+            $btn.html('<i class="bx bx-loader-alt bx-spin"></i>').prop('disabled', true);
+
+            $.ajax({
+                url: '/drs/drs/items/' + id + '/duplicate',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(res) {
+                    if (res.error) {
+                        toastr.error(res.message);
+                        return;
+                    }
+                    toastr.success(res.message);
+                    $('#items_table').bootstrapTable('refresh');
+                },
+                error: function() {
+                    toastr.error('Could not duplicate item.');
+                },
+                complete: function() {
+                    $btn.html(originalHtml).prop('disabled', false);
+                }
+            });
+        });
+
         // ── Delete run sheet ────────────────────────────────────────────
         $('#delete_sheet_btn').on('click', function() {
             Swal.fire({
@@ -955,7 +1004,7 @@
                     $matchSelect.empty().append(
                         '<option value="" data-date="" data-pma1="" data-pma2="">N/A</option>');
                     $.each(matches, function(i, m) {
-                        var label    = 'M' + m.match_number + ' — ' + m.match_date;
+                        var label = 'M' + m.match_number + ' — ' + m.match_date;
                         var selected = (selectedMatchId && m.id == selectedMatchId) ? ' selected' : '';
                         $matchSelect.append(
                             '<option value="' + m.id + '"' +
