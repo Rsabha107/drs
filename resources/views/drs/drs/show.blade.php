@@ -288,7 +288,7 @@
                                         </span>
                                     </div>
                                     <h5 class="font-size-14 mb-0">
-                                        Open : Kick-Off
+                                        Gates : Kick-Off
                                     </h5>
                                 </div>
                                 <div class="text-muted mt-4">

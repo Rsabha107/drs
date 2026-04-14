@@ -10,6 +10,7 @@ class EventMatch extends Model
 {
     use HasFactory;
     protected $table = 'matches';
+    protected $guarded = [];
 
     public function active_status()
     {

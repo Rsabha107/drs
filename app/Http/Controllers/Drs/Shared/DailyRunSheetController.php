@@ -577,7 +577,7 @@ class DailyRunSheetController extends Controller
         $matches = EventMatch::where('event_id', $eventId)
             ->where('venue_id', $venueId)
             ->orderBy('match_date')
-            ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2', 'gates_opening', 'kick_off']);
+            ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2',  'kick_off']);
 
         return response()->json($matches);
     }
