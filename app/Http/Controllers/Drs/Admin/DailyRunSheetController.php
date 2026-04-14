@@ -54,12 +54,14 @@ class DailyRunSheetController extends Controller
 
     public function flatListExport(Request $request)
     {
-        $eventId = session()->get('EVENT_ID');
-        $venueId = $request->input('venue_id');
-        $matchId = $request->input('match_id');
+        $eventId   = session()->get('EVENT_ID');
+        $venueId   = $request->input('venue_id');
+        $matchId   = $request->input('match_id');
+        $sheetType = $request->input('sheet_type');
 
-        $export   = new FlatListExport($eventId, $venueId, $matchId);
-        $filename = 'CombinedRunSheet_V' . $venueId . '_M' . $matchId . '.xlsx';
+        $export   = new FlatListExport($eventId, $venueId, $matchId, $sheetType);
+        $suffix   = $sheetType ? '_' . $sheetType : '';
+        $filename = 'CombinedRunSheet_V' . $venueId . '_M' . $matchId . $suffix . '.xlsx';
 
         return Excel::download($export, $filename);
     }

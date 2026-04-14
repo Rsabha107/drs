@@ -56,11 +56,15 @@
 
     <div class="col-md-6">
         <label class="form-label">Gates Opening</label>
-        <input type="time" name="gates_opening" class="form-control">
+        <input type="text" name="gates_opening" class="form-control datetimepicker"
+            placeholder="HH:MM"
+            data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","disableMobile":true}'>
     </div>
 
     <div class="col-md-6">
         <label class="form-label">Kick-Off</label>
-        <input type="time" name="kick_off" class="form-control">
+        <input type="text" name="kick_off" class="form-control datetimepicker"
+            placeholder="HH:MM"
+            data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","disableMobile":true}'>
     </div>
 </div>

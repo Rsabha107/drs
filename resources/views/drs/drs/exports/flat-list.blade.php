@@ -5,7 +5,7 @@
 <table>
     {{-- Title row --}}
     <tr>
-        <td style="font-weight:bold;font-size:14pt;" colspan="8">
+        <td style="font-weight:bold;font-size:14pt;" colspan="9">
             Daily Run Sheet
             @if($firstSheet?->sheet_type) ({{ $firstSheet->sheet_type }}) @endif
         </td>
@@ -48,7 +48,7 @@
     </tr>
 
     {{-- Spacer --}}
-    <tr><td colspan="8"></td></tr>
+    <tr><td colspan="9"></td></tr>
 
     {{-- Column headers --}}
     <tr>
@@ -56,6 +56,7 @@
         <td style="background-color:#305496;color:#ffffff;font-weight:bold;">Start Time</td>
         <td style="background-color:#305496;color:#ffffff;font-weight:bold;">Countdown</td>
         <td style="background-color:#305496;color:#ffffff;font-weight:bold;">End Time</td>
+        {{-- <td style="background-color:#305496;color:#ffffff;font-weight:bold;">Sheet Type</td> --}}
         <td style="background-color:#305496;color:#ffffff;font-weight:bold;">Functional Area</td>
         <td style="background-color:#305496;color:#ffffff;font-weight:bold;">Location</td>
         <td style="background-color:#305496;color:#ffffff;font-weight:bold;">Description</td>
@@ -99,6 +100,7 @@
             <td style="{{ $style }}">{{ $startFmt ?? '' }}</td>
             <td style="{{ $style }}">{{ $countdown }}</td>
             <td style="{{ $style }}">{{ $item->end_time ? \Carbon\Carbon::parse($item->end_time)->format('H:i') : '' }}</td>
+            {{-- <td style="{{ $style }}">{{ $sheet?->sheet_type ?? '' }}</td> --}}
             <td style="{{ $style }}">{{ $faLabel }}</td>
             <td style="{{ $style }}">{{ $item->location ?? '' }}</td>
             <td style="{{ $style }}">{{ $item->description ?? '' }}</td>

@@ -32,6 +32,9 @@ class DailyRunSheetController extends Controller
         if ($user->hasRole('Customer')) {
             $userFas   = $user->fa()->get(['functional_areas.id', 'functional_areas.title', 'functional_areas.fa_code']);
             $userFaIds = $userFas->pluck('id')->toArray();
+        } elseif ($user->hasRole('SuperAdmin')) {
+            $userFas   = FunctionalArea::orderBy('fa_code')->get();
+            $userFaIds = $userFas->pluck('id')->toArray();
         }
 
         // Sheet types available to this user but if SupreAdmin show all sheet types
@@ -105,7 +108,7 @@ class DailyRunSheetController extends Controller
         $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($s) {
             return [
                 'id'               => $s->id,
-                'sheet_type'       => '<span class="badge bg-primary">' . e($s->sheet_type) . '</span>',
+                'sheet_type'       => '<span class="badge bg-primary">' . e($s->run_date_dmy . ' ' . $s->sheet_type) . '</span>',
                 'venue'            => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
                 'match'            => '<span class="fs-9">' . e($s->match ? $s->match->match_number : '-') . '</span>',
                 'teams'            => '<span class="fs-9">' . e($s->match ? $s->match->pma1 . ' vs ' . $s->match->pma2 : '-') . '</span>',
@@ -151,11 +154,29 @@ class DailyRunSheetController extends Controller
             ], 422);
         }
 
+        $eventId           = session()->get('EVENT_ID');
+        $matchId           = $request->match_id ?: null;
+        $functionalAreaId  = $request->functional_area_id ?: null;
+
+        $duplicate = DailyRunSheet::where('event_id', $eventId)
+            ->where('venue_id', $request->venue_id)
+            ->where('sheet_type', $request->sheet_type)
+            ->where('match_id', $matchId)
+            ->where('functional_area_id', $functionalAreaId)
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json([
+                'error'   => true,
+                'message' => 'A Daily Run Sheet for this match, sheet type, and functional area already exists.',
+            ], 422);
+        }
+
         $sheet = DailyRunSheet::create([
-            'event_id'           => session()->get('EVENT_ID'),
+            'event_id'           => $eventId,
             'venue_id'           => $request->venue_id,
-            'match_id'           => $request->match_id ?: null,
-            'functional_area_id' => $request->functional_area_id ?: null,
+            'match_id'           => $matchId,
+            'functional_area_id' => $functionalAreaId,
             'sheet_type'         => $request->sheet_type,
             'run_date'           => $request->run_date,
             'gates_opening'      => $request->gates_opening ?: null,
@@ -296,11 +317,29 @@ class DailyRunSheetController extends Controller
             ], 422);
         }
 
+        $matchId          = $request->match_id ?: null;
+        $functionalAreaId = $request->functional_area_id ?: null;
+
+        $duplicate = DailyRunSheet::where('event_id', session()->get('EVENT_ID'))
+            ->where('venue_id', $request->venue_id)
+            ->where('sheet_type', $request->sheet_type)
+            ->where('match_id', $matchId)
+            ->where('functional_area_id', $functionalAreaId)
+            ->where('id', '!=', $request->id)
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json([
+                'error'   => true,
+                'message' => 'A Daily Run Sheet for this match, sheet type, and functional area already exists.',
+            ], 422);
+        }
+
         $sheet = DailyRunSheet::findOrFail($request->id);
         $sheet->update([
             'venue_id'           => $request->venue_id,
-            'match_id'           => $request->match_id ?: null,
-            'functional_area_id' => $request->functional_area_id ?: null,
+            'match_id'           => $matchId,
+            'functional_area_id' => $functionalAreaId,
             'sheet_type'         => $request->sheet_type,
             'run_date'           => $request->run_date,
             'gates_opening'      => $request->gates_opening ?: null,

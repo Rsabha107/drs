@@ -416,9 +416,16 @@
                     return;
                 }
 
+                // Disabled fields (e.g. match_id while it's loading) are excluded
+                // from .serialize(), so temporarily enable them to capture their values.
+                var $form = $(this);
+                var $disabledFields = $form.find(':disabled').prop('disabled', false);
+                var formData = $form.serialize();
+                $disabledFields.prop('disabled', true);
+
                 drsAjaxSubmit(
                     '{{ route('drs.drs.update') }}',
-                    $(this).serialize(),
+                    formData,
                     '#edit_drs_btn',
                     '<i class="fa-solid fa-save me-1"></i>Save Changes',
                     function(res) {

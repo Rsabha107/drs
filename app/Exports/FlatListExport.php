@@ -17,21 +17,28 @@ class FlatListExport implements FromView, ShouldAutoSize, WithTitle
     protected $eventId;
     protected $venueId;
     protected $matchId;
+    protected $sheetType;
 
-    public function __construct($eventId, $venueId, $matchId)
+    public function __construct($eventId, $venueId, $matchId, $sheetType = null)
     {
-        $this->eventId = $eventId;
-        $this->venueId = $venueId;
-        $this->matchId = $matchId;
+        $this->eventId   = $eventId;
+        $this->venueId   = $venueId;
+        $this->matchId   = $matchId;
+        $this->sheetType = $sheetType;
     }
 
     public function view(): View
     {
-        $sheets = DailyRunSheet::with(['event', 'venue', 'match', 'functionalArea', 'items'])
+        $query = DailyRunSheet::with(['event', 'venue', 'match', 'functionalArea', 'items'])
             ->where('event_id', $this->eventId)
             ->where('venue_id', $this->venueId)
-            ->where('match_id', $this->matchId)
-            ->get();
+            ->where('match_id', $this->matchId);
+
+        if ($this->sheetType) {
+            $query->where('sheet_type', $this->sheetType);
+        }
+
+        $sheets = $query->get();
 
         $firstSheet  = $sheets->first();
         $koFormatted = $firstSheet?->kick_off
@@ -52,6 +59,7 @@ class FlatListExport implements FromView, ShouldAutoSize, WithTitle
             'firstSheet'  => $firstSheet,
             'items'       => $items,
             'koFormatted' => $koFormatted,
+            'sheetType'   => $this->sheetType,
         ]);
     }
 

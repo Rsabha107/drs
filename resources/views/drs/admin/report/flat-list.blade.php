@@ -94,7 +94,7 @@
                     data-bs-target="#add_item_modal">
                     <i class="fa-solid fa-plus me-1"></i>Add Item
                 </button>
-                <a href="{{ route('drs.admin.flat.list.export', ['venue_id' => $venueId, 'match_id' => $matchId]) }}"
+                <a href="{{ route('drs.admin.flat.list.export', ['event_id' => session()->get('EVENT_ID'), 'venue_id' => $venueId, 'match_id' => $matchId, 'sheet_type' => $sheetType]) }}"
                     class="btn btn-sm btn-subtle-success">
                     <i class="fa-solid fa-file-excel me-1"></i>Export Excel
                 </a>
@@ -160,7 +160,7 @@
                     </div>
                     @if ($venueId || $matchId || ($sheetType ?? null))
                         <div class="col-md-1">
-                            <a href="{{ route('drs.admin.flat.list') }}" class="btn btn-sm btn-outline-secondary w-100"
+                            <a href="{{ route('drs.admin.flat.list', ['event_id' => session()->get('EVENT_ID')]) }}" class="btn btn-sm btn-outline-secondary w-100"
                                 title="Clear filters">
                                 <i class="fa-solid fa-xmark"></i>
                             </a>
