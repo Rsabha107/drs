@@ -97,6 +97,7 @@
                         <tr>
                             <th data-field="id" data-sortable="true" data-visible="false">ID</th>
                             <th data-field="sheet_type" data-sortable="true">Sheet Type</th>
+                            <th data-field="venue" data-sortable="false">Venue</th>
                             <th data-field="match" data-sortable="false">Match#</th>
                             <th data-field="teams" data-sortable="false">Teams</th>
                             <th data-field="functional_area" data-sortable="false">Func. Area</th>
@@ -227,14 +228,38 @@
                 }
             }
 
+            // ── Helpers ────────────────────────────────────────────────
+            function isMdType($form) {
+                return $form.find('[name="sheet_type"]').val() === 'MD';
+            }
+
+            function clearMatchSelect($matchSelect, $form) {
+                $matchSelect.empty()
+                    .append('<option value="">N/A</option>')
+                    .prop('disabled', true);
+                setMatchDependents($form, true);
+                fillTeams($form, '', '');
+                $form.find('[name="gates_opening"], [name="kick_off"]').val('');
+            }
+
             // ── Dependent match select ──────────────────────────────────
+            function setMatchDependents($form, disabled) {
+                $form.find('[name="gates_opening"], [name="kick_off"]').prop('disabled', disabled);
+                $form.find('[id$="_drs_teams"]').prop('disabled', disabled);
+            }
+
             function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId) {
                 var venueId = $venueSelect.val();
+                var $form   = $matchSelect.closest('form');
+                var dfd     = $.Deferred();
+
                 $matchSelect.empty().append('<option value="">N/A</option>').prop('disabled', true);
+                setMatchDependents($form, true);
 
                 if (!venueId) {
                     $matchSelect.append('<option value="" disabled selected>— select a venue first —</option>');
-                    return;
+                    dfd.resolve();
+                    return dfd.promise();
                 }
 
                 $matchSelect.append('<option value="" disabled selected>Loading…</option>');
@@ -245,7 +270,7 @@
                     dataType: 'json',
                     success: function(matches) {
                         $matchSelect.empty().append(
-                            '<option value="" data-date="" data-pma1="" data-pma2="">N/A</option>');
+                            '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>');
                         $.each(matches, function(i, m) {
                             var label = 'M' + m.match_number + ' — ' + m.match_date;
                             var selected = (selectedMatchId && m.id == selectedMatchId) ?
@@ -260,24 +285,31 @@
                                 selected + '>' + label + '</option>'
                             );
                         });
+
+                        // Enable match and dependent fields
                         $matchSelect.prop('disabled', false);
+                        setMatchDependents($form, false);
+
                         // If a match was preselected, fill date and teams immediately
                         if (selectedMatchId) {
                             var $selected = $matchSelect.find('option:selected');
-                            var $form = $matchSelect.closest('form');
                             var date = $selected.data('date');
                             if (date) $form.find('[name="run_date"]').val(date);
                             fillTeams($form, $selected.data('pma1'), $selected.data('pma2'));
                         }
+                        dfd.resolve();
                     },
                     error: function() {
                         $matchSelect.empty().append(
                             '<option value="">— could not load matches —</option>');
+                        dfd.reject();
                     }
                 });
+
+                return dfd.promise();
             }
 
-            // Match change → fill date + teams
+            // Match change → fill date + teams, or clear times when N/A
             $('body').on('change', '#create_drs_match_id, #edit_drs_match_id', function() {
                 var $opt = $(this).find('option:selected');
                 var $form = $(this).closest('form');
@@ -285,21 +317,49 @@
                 var gatesOpening = $opt.data('gates-opening');
                 var kickOff = $opt.data('kick-off');
                 if (date) $form.find('[name="run_date"]').val(date);
-                if (gatesOpening) $form.find('[name="gates_opening"]').val(gatesOpening);
-                if (kickOff) $form.find('[name="kick_off"]').val(kickOff);
+                $form.find('[name="gates_opening"]').val(gatesOpening || '');
+                $form.find('[name="kick_off"]').val(kickOff || '');
                 fillTeams($form, $opt.data('pma1'), $opt.data('pma2'));
             });
 
             // Venue change in create modal
             $('#create_drs_venue_id').on('change', function() {
-                fillTeams($('#create_drs_form'), '', '');
-                loadDrsMatches($(this), $('#create_drs_match_id'), null);
+                var $form = $('#create_drs_form');
+                if (isMdType($form)) {
+                    loadDrsMatches($(this), $('#create_drs_match_id'), null);
+                } else {
+                    clearMatchSelect($('#create_drs_match_id'), $form);
+                }
             });
 
             // Venue change in edit modal
             $('#edit_drs_venue_id').on('change', function() {
-                fillTeams($('#edit_drs_form'), '', '');
-                loadDrsMatches($(this), $('#edit_drs_match_id'), null);
+                var $form = $('#edit_drs_form');
+                if (isMdType($form)) {
+                    loadDrsMatches($(this), $('#edit_drs_match_id'), null);
+                } else {
+                    clearMatchSelect($('#edit_drs_match_id'), $form);
+                }
+            });
+
+            // Sheet type change in create modal
+            $('#create_drs_form [name="sheet_type"]').on('change', function() {
+                var $form = $('#create_drs_form');
+                if ($(this).val() === 'MD') {
+                    loadDrsMatches($('#create_drs_venue_id'), $('#create_drs_match_id'), null);
+                } else {
+                    clearMatchSelect($('#create_drs_match_id'), $form);
+                }
+            });
+
+            // Sheet type change in edit modal
+            $('#edit_drs_form [name="sheet_type"]').on('change', function() {
+                var $form = $('#edit_drs_form');
+                if ($(this).val() === 'MD') {
+                    loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'), null);
+                } else {
+                    clearMatchSelect($('#edit_drs_match_id'), $form);
+                }
             });
 
             // Reset match select when create modal closes
@@ -360,15 +420,20 @@
                         $('#edit_drs_form [name="kick_off"]').val(data.kick_off);
                         $('#edit_drs_form').removeClass('was-validated');
 
-                        // Set venue then load dependent matches with current match preselected
-                        $('#edit_drs_venue_id').val(data.venue_id);
-                        loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'), data
-                            .match_id);
-
                         // Set functional area
                         $('#edit_drs_functional_area_id').val(data.functional_area_id || '');
 
-                        $('#edit_drs_modal').modal('show');
+                        // Only load matches for MD sheets; keep match disabled for all others
+                        $('#edit_drs_venue_id').val(data.venue_id);
+                        if (data.sheet_type === 'MD') {
+                            loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'), data.match_id)
+                                .always(function() {
+                                    $('#edit_drs_modal').modal('show');
+                                });
+                        } else {
+                            clearMatchSelect($('#edit_drs_match_id'), $('#edit_drs_form'));
+                            $('#edit_drs_modal').modal('show');
+                        }
                     },
                     error: function() {
                         toastr.error('Could not load run sheet data.');

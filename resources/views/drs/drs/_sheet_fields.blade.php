@@ -14,13 +14,6 @@
     </div>
 
     <div class="col-md-6">
-        <label class="form-label">Match <span class="text-danger">*</span></label>
-        <select id="{{ $prefix }}_drs_match_id" name="match_id" class="form-select" disabled>
-            <option value="">— select a venue first —</option>
-        </select>
-    </div>
-
-    <div class="col-md-6">
         <label class="form-label">Sheet Type <span class="text-danger">*</span></label>
         <select name="sheet_type" class="form-select" required>
             <option value="">Select type</option>
@@ -30,6 +23,14 @@
         </select>
         <div class="invalid-feedback">Please select a sheet type.</div>
     </div>
+
+    <div class="col-md-6">
+        <label class="form-label">Match <span class="text-danger">*</span></label>
+        <select id="{{ $prefix }}_drs_match_id" name="match_id" class="form-select" disabled>
+            <option value="">— select a venue first —</option>
+        </select>
+    </div>
+
 
     <div class="col-md-6">
         <label class="form-label">Functional Area <span class="text-muted small">(optional)</span></label>
@@ -50,21 +51,19 @@
 
     <div class="col-md-6">
         <label class="form-label">Teams</label>
-        <input type="text" id="{{ $prefix }}_drs_teams" class="form-control" readonly
+        <input type="text" id="{{ $prefix }}_drs_teams" class="form-control" readonly disabled
             placeholder="— select a match —">
     </div>
 
     <div class="col-md-6">
         <label class="form-label">Gates Opening</label>
-        <input type="text" name="gates_opening" class="form-control datetimepicker"
-            placeholder="HH:MM"
+        <input type="text" name="gates_opening" class="form-control datetimepicker" placeholder="HH:MM" disabled
             data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","disableMobile":true}'>
     </div>
 
     <div class="col-md-6">
         <label class="form-label">Kick-Off</label>
-        <input type="text" name="kick_off" class="form-control datetimepicker"
-            placeholder="HH:MM"
+        <input type="text" name="kick_off" class="form-control datetimepicker" placeholder="HH:MM" disabled
             data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","disableMobile":true}'>
     </div>
 </div>

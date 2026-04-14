@@ -409,6 +409,7 @@
                 <form id="add_item_form" novalidate class="needs-validation">
                     @csrf
                     <input type="hidden" name="run_sheet_id" value="{{ $sheet->id }}">
+                    <input type="hidden" name="functional_area" value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-12">
@@ -419,10 +420,11 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Start Time</label>
-                                <input type="time" name="start_time" id="add_start_time" class="form-control">
+                                <input type="text" name="start_time" id="add_start_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                    data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">KO Offset
+                                <label class="form-label">Countdown
                                     @if ($koFormatted)
                                         <span class="text-muted fw-normal">(KO {{ $koFormatted }})</span>
                                     @endif
@@ -434,12 +436,13 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">End Time</label>
-                                <input type="time" name="end_time" class="form-control">
+                                <input type="text" name="end_time" id="add_end_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                    data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Functional Area</label>
-                                <input type="text" name="functional_area" class="form-control"
-                                    placeholder="e.g. SEC - Security">
+                                <input type="text" name="functional_area" class="form-control" disabled
+                                    value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Location</label>
@@ -496,6 +499,7 @@
                 <form id="edit_item_form" novalidate class="needs-validation">
                     @csrf
                     <input type="hidden" name="id" id="edit_item_id">
+                    <input type="hidden" name="functional_area" value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-12">
@@ -505,7 +509,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Start Time</label>
-                                <input type="time" name="start_time" id="edit_item_start_time" class="form-control">
+                                <input type="text" name="start_time" id="edit_item_start_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                    data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Countdown
@@ -520,12 +525,14 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">End Time</label>
-                                <input type="time" name="end_time" id="edit_item_end_time" class="form-control">
+                                <input type="text" name="end_time" id="edit_item_end_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                    data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Functional Area</label>
                                 <input type="text" name="functional_area" id="edit_item_functional_area"
-                                    class="form-control" placeholder="e.g. SEC - Security">
+                                    class="form-control" disabled
+                                    value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Location</label>
@@ -846,6 +853,17 @@
         $('#add_row_color_select').on('change', updateAddPreview);
         updateAddPreview();
 
+        // Set a flatpickr time input programmatically (falls back to plain .val())
+        function setTimeInput(id, value) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (el._flatpickr) {
+                el._flatpickr.setDate(value || '', false, 'H:i');
+            } else {
+                $(el).val(value || '');
+            }
+        }
+
         // Bidirectional: start time ↔ KO offset (Add modal)
         $('#add_start_time').on('change', function() {
             $('#add_countdown_to_ko').val(calcKoOffset($(this).val()));
@@ -854,7 +872,7 @@
         $('#add_countdown_to_ko').on('blur', function() {
             var t = parseKoOffset($(this).val());
             if (t) {
-                $('#add_start_time').val(t);
+                setTimeInput('add_start_time', t);
                 $(this).val(calcKoOffset(t)).removeClass('is-invalid');
             } else if ($(this).val().trim() !== '') {
                 $(this).addClass('is-invalid');
@@ -870,6 +888,9 @@
             $('#add_item_form')[0].reset();
             $('#add_item_form').removeClass('was-validated');
             $('#add_countdown_to_ko').val('').removeClass('is-invalid');
+            $('#add_item_form .datetimepicker').each(function() {
+                if (this._flatpickr) this._flatpickr.clear();
+            });
             updateAddPreview();
         });
 
@@ -953,7 +974,7 @@
         $('#edit_countdown_to_ko').on('blur', function() {
             var t = parseKoOffset($(this).val());
             if (t) {
-                $('#edit_item_start_time').val(t);
+                setTimeInput('edit_item_start_time', t);
                 $(this).val(calcKoOffset(t)).removeClass('is-invalid');
             } else if ($(this).val().trim() !== '') {
                 $(this).addClass('is-invalid');
@@ -983,11 +1004,9 @@
                 success: function(data) {
                     $('#edit_item_id').val(data.id);
                     $('#edit_item_title').val(data.title);
-                    $('#edit_item_start_time').val(data.start_time);
-                    $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass(
-                        'is-invalid');
-                    $('#edit_item_end_time').val(data.end_time);
-                    $('#edit_item_functional_area').val(data.functional_area);
+                    setTimeInput('edit_item_start_time', data.start_time);
+                    $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass('is-invalid');
+                    setTimeInput('edit_item_end_time', data.end_time);
                     $('#edit_item_location').val(data.location);
                     $('#edit_item_description').val(data.description);
                     $('#edit_row_color_select').val(data.row_color);
