@@ -17,7 +17,10 @@
         <label class="form-label">Sheet Type <span class="text-danger">*</span></label>
         <select name="sheet_type" class="form-select" required>
             <option value="">Select type</option>
-            @foreach (['MD-3', 'MD-2', 'MD-1', 'MD', 'MD FINAL', 'MD+1'] as $t)
+            @foreach (auth()->user()->hasRole('Customer')
+                ? ['MD-3', 'MD-2', 'MD-1', 'MD FINAL', 'MD+1']
+                : ['MD-3', 'MD-2', 'MD-1', 'MD', 'MD FINAL', 'MD+1']
+            as $t)
                 <option value="{{ $t }}">{{ $t }}</option>
             @endforeach
         </select>

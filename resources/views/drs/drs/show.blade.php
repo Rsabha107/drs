@@ -133,6 +133,10 @@
                     data-bs-target="#add_item_modal">
                     <i class="fa-solid fa-plus me-1"></i>Add Item
                 </button>
+                <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal"
+                    data-bs-target="#copy_from_modal">
+                    <i class="fa-solid fa-copy me-1"></i>Copy from DRS
+                </button>
                 <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
                     <i class="fa-solid fa-pen me-1"></i>Edit Header
                 </button>
@@ -572,6 +576,36 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════════════
+     Copy from DRS Modal
+═══════════════════════════════════════════════════════════════ --}}
+    <div class="modal fade" id="copy_from_modal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content bg-100">
+                <div class="modal-header bg-modal-header">
+                    <h3 class="mb-0 text-white">Copy Items from Another DRS</h3>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Source DRS</label>
+                        <select id="copy_source_select" class="form-select">
+                            <option value="">— Loading… —</option>
+                        </select>
+                    </div>
+                    <div id="copy_preview" class="text-muted small"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="copy_confirm_btn" disabled>
+                        <i class="fa-solid fa-copy me-1"></i>Copy Items
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1181,6 +1215,84 @@
                     }
                 });
             });
+        });
+
+        // ── Copy from DRS ───────────────────────────────────────────────
+        var copySourceUrl  = '{{ route('drs.drs.copy.source', $sheet->id) }}';
+        var copyFromUrl    = '{{ route('drs.drs.copy.from',   $sheet->id) }}';
+
+        $('#copy_from_modal').on('show.bs.modal', function() {
+            var $sel = $('#copy_source_select');
+            $sel.html('<option value="">— Loading… —</option>');
+            $('#copy_preview').text('');
+            $('#copy_confirm_btn').prop('disabled', true);
+
+            $.getJSON(copySourceUrl, function(sheets) {
+                if (!sheets.length) {
+                    $sel.html('<option value="">— No other run sheets available —</option>');
+                    return;
+                }
+                $sel.html('<option value="">— Select a DRS —</option>');
+                $.each(sheets, function(i, s) {
+                    $sel.append('<option value="' + s.id + '" data-count="' + s.items_count + '">' +
+                        s.label + ' (' + s.items_count + ' items)</option>');
+                });
+            }).fail(function() {
+                $sel.html('<option value="">— Could not load —</option>');
+            });
+        });
+
+        $('#copy_source_select').on('change', function() {
+            var $opt   = $(this).find('option:selected');
+            var count  = parseInt($opt.data('count')) || 0;
+            var $btn   = $('#copy_confirm_btn');
+            if (!$(this).val()) {
+                $('#copy_preview').text('');
+                $btn.prop('disabled', true);
+                return;
+            }
+            $('#copy_preview').html(
+                '<i class="fa-solid fa-circle-info me-1"></i>' +
+                count + ' item' + (count !== 1 ? 's' : '') +
+                ' will be appended to this run sheet.'
+            );
+            $btn.prop('disabled', count === 0);
+        });
+
+        $('#copy_confirm_btn').on('click', function() {
+            var sourceId = $('#copy_source_select').val();
+            if (!sourceId) return;
+
+            var $btn = $(this);
+            $btn.html('<i class="bx bx-loader-alt bx-spin me-1"></i>Copying…').prop('disabled', true);
+
+            $.ajax({
+                url: copyFromUrl,
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', source_id: sourceId },
+                dataType: 'json',
+                success: function(res) {
+                    if (res.error) {
+                        toastr.error(res.message);
+                    } else {
+                        toastr.success(res.message);
+                        $('#copy_from_modal').modal('hide');
+                        $('#items_table').bootstrapTable('refresh');
+                    }
+                },
+                error: function() {
+                    toastr.error('Copy failed. Please try again.');
+                },
+                complete: function() {
+                    $btn.html('<i class="fa-solid fa-copy me-1"></i>Copy Items').prop('disabled', false);
+                }
+            });
+        });
+
+        $('#copy_from_modal').on('hidden.bs.modal', function() {
+            $('#copy_source_select').html('<option value="">— Select a DRS —</option>');
+            $('#copy_preview').text('');
+            $('#copy_confirm_btn').prop('disabled', true);
         });
 
         // ── Helpers: match loading & teams fill ─────────────────────────

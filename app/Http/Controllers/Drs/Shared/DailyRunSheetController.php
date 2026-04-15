@@ -154,6 +154,15 @@ class DailyRunSheetController extends Controller
             ], 422);
         }
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole('Customer') && $request->sheet_type === 'MD') {
+            return response()->json([
+                'error'   => true,
+                'message' => 'Customers may not create MD sheet types.',
+            ], 403);
+        }
+
         $eventId           = session()->get('EVENT_ID');
         $matchId           = $request->match_id ?: null;
         $functionalAreaId  = $request->functional_area_id ?: null;
@@ -317,6 +326,15 @@ class DailyRunSheetController extends Controller
             ], 422);
         }
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole('Customer') && $request->sheet_type === 'MD') {
+            return response()->json([
+                'error'   => true,
+                'message' => 'Customers may not use MD sheet types.',
+            ], 403);
+        }
+
         $matchId          = $request->match_id ?: null;
         $functionalAreaId = $request->functional_area_id ?: null;
 
@@ -363,6 +381,67 @@ class DailyRunSheetController extends Controller
         return redirect()->route('drs.drs.index')
             ->with('message', 'Daily Run Sheet deleted.')
             ->with('alert-type', 'success');
+    }
+
+    // ── Copy items from another DRS ──────────────────────────────────────────
+
+    public function copySourceList($id)
+    {
+        $sheet   = DailyRunSheet::findOrFail($id);
+        $eventId = $sheet->event_id;
+
+        $sheets = DailyRunSheet::with(['venue', 'functionalArea'])
+            ->where('event_id', $eventId)
+            ->where('id', '!=', $id)
+            ->orderBy('sheet_type')
+            ->get()
+            ->map(fn($s) => [
+                'id'             => $s->id,
+                'label'          => implode(' · ', array_filter([
+                    $s->sheet_type,
+                    $s->venue?->short_name,
+                    $s->functionalArea?->fa_code,
+                    $s->run_date_dmy,
+                ])),
+                'items_count'    => $s->items()->count(),
+            ]);
+
+        return response()->json($sheets);
+    }
+
+    public function copyItemsFrom(Request $request, $id)
+    {
+        $request->validate(['source_id' => 'required|integer|exists:daily_run_sheets,id']);
+
+        $target = DailyRunSheet::findOrFail($id);
+        $source = DailyRunSheet::with('items')->findOrFail($request->source_id);
+
+        $faLabel = $target->functionalArea
+            ? $target->functionalArea->fa_code . ' — ' . $target->functionalArea->title
+            : null;
+
+        $now  = now();
+        $rows = $source->items->map(fn($item) => [
+            'run_sheet_id'    => $target->id,
+            'title'           => $item->title,
+            'start_time'      => $item->start_time,
+            'end_time'        => $item->end_time,
+            'countdown_to_ko' => $item->countdown_to_ko,
+            'functional_area' => $faLabel ?? $item->functional_area,
+            'location'        => $item->location,
+            'description'     => $item->description,
+            'row_color'       => $item->row_color,
+            'sort_order'      => $item->sort_order,
+            'created_at'      => $now,
+            'updated_at'      => $now,
+        ])->toArray();
+
+        DailyRunSheetItem::insert($rows);
+
+        return response()->json([
+            'error'   => false,
+            'message' => count($rows) . ' items copied successfully.',
+        ]);
     }
 
     // ── Items ────────────────────────────────────────────────────────────────
