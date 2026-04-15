@@ -89,55 +89,53 @@ class DailyRunSheetController extends Controller
 
     public function flatListView(Request $request)
     {
-        $eventId = session()->get('EVENT_ID');
-        $event   = Event::findOrFail($eventId);
+        $eventId   = session()->get('EVENT_ID');
+        $event     = Event::findOrFail($eventId);
+        $venueId   = $request->input('venue_id');
+        $sheetType = $request->input('sheet_type');
+        $matchId   = $request->input('match_id');
 
         // Only venues that have run sheets for this event
         $venues = Venue::whereHas('matches', function ($q) use ($eventId) {
             $q->where('event_id', $eventId);
         })->orderBy('short_name')->get();
 
-        $venueId = $request->input('venue_id');
-        $matchId = $request->input('match_id');
-
-        $matches     = collect();
-        $matchHeader = null;
-        $items       = collect();
-
+        // Sheet types available for the selected venue
+        $sheetTypes = collect();
         if ($venueId) {
-            $matches = EventMatch::where('event_id', $eventId)
+            $sheetTypes = DailyRunSheet::where('event_id', $eventId)
                 ->where('venue_id', $venueId)
+                ->orderBy('sheet_type')
+                ->pluck('sheet_type')
+                ->filter()->unique()->values();
+        }
+
+        // Matches that have a sheet of the selected type for this venue (match is optional)
+        $matches = collect();
+        if ($venueId && $sheetType) {
+            $matchIds = DailyRunSheet::where('event_id', $eventId)
+                ->where('venue_id', $venueId)
+                ->where('sheet_type', $sheetType)
+                ->whereNotNull('match_id')
+                ->pluck('match_id');
+
+            $matches = EventMatch::whereIn('id', $matchIds)
                 ->orderBy('match_date')
                 ->get();
         }
 
-        $sheets     = collect();
-        $sheetTypes = collect();
-        $sheetType  = $request->input('sheet_type');
+        $sheets      = collect();
+        $matchHeader = null;
 
-        if ($venueId && $matchId) {
+        if ($venueId && $sheetType) {
             $sheets = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'items'])
                 ->where('event_id', $eventId)
                 ->where('venue_id', $venueId)
-                ->where('match_id', $matchId)
+                ->where('sheet_type', $sheetType)
+                ->when($matchId, fn($q) => $q->where('match_id', $matchId))
                 ->get();
 
-            $sheetTypes = $sheets->pluck('sheet_type')->filter()->unique()->sort()->values();
-
-            $firstSheet = $sheets->first();
-            if ($firstSheet) {
-                $matchHeader = $firstSheet;
-            }
-
-            // Flatten all items from all sheets, attach parent sheet for FA/KO context
-            $items = $sheets->flatMap(function ($sheet) {
-                return $sheet->items->map(function ($item) use ($sheet) {
-                    $item->_parentSheet = $sheet;
-                    return $item;
-                });
-            })->sortBy(function ($item) {
-                return $item->start_time ?? '99:99';
-            })->values();
+            $matchHeader = $sheets->first();
         }
 
         return view('drs.admin.report.flat-list', compact(
@@ -155,10 +153,27 @@ class DailyRunSheetController extends Controller
 
     public function sheetTypesByMatch(Request $request)
     {
-        $eventId = session()->get('EVENT_ID');
-        $venueId = $request->input('venue_id');
-        $matchId = $request->input('match_id');
+        $eventId   = session()->get('EVENT_ID');
+        $venueId   = $request->input('venue_id');
+        $matchId   = $request->input('match_id');
+        $sheetType = $request->input('sheet_type');
 
+        // When list=matches, return matches that have a sheet of the given type for the venue
+        if ($request->input('list') === 'matches' && $venueId && $sheetType) {
+            $matchIds = DailyRunSheet::where('event_id', $eventId)
+                ->where('venue_id', $venueId)
+                ->where('sheet_type', $sheetType)
+                ->whereNotNull('match_id')
+                ->pluck('match_id');
+
+            $matches = EventMatch::whereIn('id', $matchIds)
+                ->orderBy('match_date')
+                ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2']);
+
+            return response()->json($matches);
+        }
+
+        // Default: return sheet types for the given venue (and optional match)
         $types = DailyRunSheet::where('event_id', $eventId)
             ->when($venueId, fn($q) => $q->where('venue_id', $venueId))
             ->when($matchId, fn($q) => $q->where('match_id', $matchId))

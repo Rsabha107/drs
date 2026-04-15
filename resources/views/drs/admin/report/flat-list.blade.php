@@ -124,10 +124,22 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold mb-1">Match</label>
-                        <select name="match_id" id="match_select" class="form-select form-select-sm"
+                        <label class="form-label fw-semibold mb-1">Sheet Type</label>
+                        <select name="sheet_type" id="sheet_type_select" class="form-select form-select-sm"
                             {{ !$venueId ? 'disabled' : '' }}>
-                            <option value="">— Select Match —</option>
+                            <option value="">— Select Sheet Type —</option>
+                            @foreach ($sheetTypes ?? [] as $st)
+                                <option value="{{ $st }}" {{ ($sheetType ?? '') == $st ? 'selected' : '' }}>
+                                    {{ $st }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold mb-1">Match <span class="text-muted fw-normal small">(optional)</span></label>
+                        <select name="match_id" id="match_select" class="form-select form-select-sm"
+                            {{ !$sheetType ? 'disabled' : '' }}>
+                            <option value="">— All Matches —</option>
                             @foreach ($matches as $m)
                                 <option value="{{ $m->id }}" {{ $matchId == $m->id ? 'selected' : '' }}>
                                     M{{ $m->match_number }}
@@ -137,18 +149,6 @@
                                     @if ($m->match_date)
                                         ({{ \Carbon\Carbon::parse($m->match_date)->format('d/m/Y') }})
                                     @endif
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold mb-1">Sheet Type</label>
-                        <select name="sheet_type" id="sheet_type_select" class="form-select form-select-sm"
-                            {{ !$matchId ? 'disabled' : '' }}>
-                            <option value="">— All Types —</option>
-                            @foreach ($sheetTypes ?? [] as $st)
-                                <option value="{{ $st }}" {{ ($sheetType ?? '') == $st ? 'selected' : '' }}>
-                                    {{ $st }}
                                 </option>
                             @endforeach
                         </select>
@@ -170,10 +170,10 @@
             </form>
 
             {{-- No selection state --}}
-            @if (!$venueId || !$matchId)
+            @if (!$venueId || !$sheetType)
                 <div class="text-center py-5 text-muted">
                     <i class="fa-solid fa-filter fa-2x mb-3 d-block opacity-40"></i>
-                    Select a venue and match to view the combined run sheet.
+                    Select a venue and sheet type to view the combined run sheet.
                 </div>
             @else
                 @php
@@ -427,24 +427,35 @@
         </div>
     @endif
 
-    {{-- ── Venue → Match → Sheet Type dynamic loaders ─────────────────── --}}
+    {{-- ── Venue → Sheet Type → Match dynamic loaders ─────────────────── --}}
     <script>
-        function resetSheetTypeSelect() {
-            var stSelect = document.getElementById('sheet_type_select');
-            stSelect.innerHTML = '<option value="">— All Types —</option>';
-            stSelect.disabled = true;
+        function resetMatchSelect() {
+            var ms = document.getElementById('match_select');
+            ms.innerHTML = '<option value="">— All Matches —</option>';
+            ms.disabled = true;
         }
 
-        function loadSheetTypes(venueId, matchId) {
+        function resetSheetTypeSelect() {
+            var st = document.getElementById('sheet_type_select');
+            st.innerHTML = '<option value="">— Select Sheet Type —</option>';
+            st.disabled = true;
+            resetMatchSelect();
+        }
+
+        // Venue → load sheet types
+        document.getElementById('venue_select').addEventListener('change', function() {
+            var venueId = this.value;
+            resetSheetTypeSelect();
+            if (!venueId) return;
+
             var stSelect = document.getElementById('sheet_type_select');
             stSelect.innerHTML = '<option value="">— Loading… —</option>';
             stSelect.disabled = true;
-            fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId + '&match_id=' + matchId)
-                .then(function(r) {
-                    return r.json();
-                })
+
+            fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId)
+                .then(function(r) { return r.json(); })
                 .then(function(types) {
-                    stSelect.innerHTML = '<option value="">— All Types —</option>';
+                    stSelect.innerHTML = '<option value="">— Select Sheet Type —</option>';
                     types.forEach(function(t) {
                         var opt = document.createElement('option');
                         opt.value = t;
@@ -454,52 +465,44 @@
                     stSelect.disabled = types.length === 0;
                 })
                 .catch(function() {
-                    stSelect.innerHTML = '<option value="">— All Types —</option>';
+                    stSelect.innerHTML = '<option value="">— Select Sheet Type —</option>';
                     stSelect.disabled = true;
                 });
-        }
+        });
 
-        document.getElementById('venue_select').addEventListener('change', function() {
-            var venueId = this.value;
+        // Sheet Type → load matches (only those that have a sheet of this type for the venue)
+        document.getElementById('sheet_type_select').addEventListener('change', function() {
+            var sheetType = this.value;
+            var venueId   = document.getElementById('venue_select').value;
+            resetMatchSelect();
+            if (!sheetType || !venueId) return;
+
             var matchSelect = document.getElementById('match_select');
             matchSelect.innerHTML = '<option value="">— Loading… —</option>';
             matchSelect.disabled = true;
-            resetSheetTypeSelect();
-            if (!venueId) {
-                matchSelect.innerHTML = '<option value="">— Select Match —</option>';
-                return;
-            }
-            fetch('/drs/venue/' + venueId + '/matches')
-                .then(function(r) {
-                    return r.json();
-                })
+
+            fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId + '&sheet_type=' + encodeURIComponent(sheetType) + '&list=matches')
+                .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    matchSelect.innerHTML = '<option value="">— Select Match —</option>';
+                    matchSelect.innerHTML = '<option value="">— All Matches —</option>';
+                    if (data.length === 0) {
+                        matchSelect.disabled = true;
+                        return;
+                    }
                     data.forEach(function(m) {
-                        var date = m.match_date ? new Date(m.match_date).toLocaleDateString('en-GB') :
-                            '';
+                        var date  = m.match_date ? new Date(m.match_date).toLocaleDateString('en-GB') : '';
                         var teams = (m.pma1 || m.pma2) ? ' — ' + m.pma1 + ' vs ' + m.pma2 : '';
-                        var opt = document.createElement('option');
+                        var opt   = document.createElement('option');
                         opt.value = m.id;
-                        opt.textContent = 'M' + m.match_number + teams + (date ? ' (' + date + ')' :
-                        '');
+                        opt.textContent = 'M' + m.match_number + teams + (date ? ' (' + date + ')' : '');
                         matchSelect.appendChild(opt);
                     });
                     matchSelect.disabled = false;
                 })
                 .catch(function() {
-                    matchSelect.innerHTML = '<option value="">— Error loading matches —</option>';
+                    matchSelect.innerHTML = '<option value="">— All Matches —</option>';
+                    matchSelect.disabled = true;
                 });
-        });
-
-        document.getElementById('match_select').addEventListener('change', function() {
-            var matchId = this.value;
-            var venueId = document.getElementById('venue_select').value;
-            if (!matchId) {
-                resetSheetTypeSelect();
-                return;
-            }
-            loadSheetTypes(venueId, matchId);
         });
     </script>
 
