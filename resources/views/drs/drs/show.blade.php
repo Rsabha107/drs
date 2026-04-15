@@ -365,7 +365,7 @@
                         data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-search="true"
                         data-side-pagination="server" data-icon-size="sm" data-pagination="true"
                         data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
-                        data-show-pagination-switch="true" data-mobile-responsive="true" data-buttons-class="secondary"
+                         data-mobile-responsive="true" data-buttons-class="secondary"
                         data-query-params="queryParams">
                         <thead>
                             <tr>
@@ -672,23 +672,20 @@
             return '<i class="bx bx-loader-alt bx-spin bx-flip-vertical"></i>';
         }
 
+        var isSuperAdmin = {{ auth()->user()->hasRole('SuperAdmin') ? 'true' : 'false' }};
+
         function itemRowStyle(row) {
-            var map = {
-                'red': {
-                    classes: 'color-red'
-                },
-                'yellow': {
-                    classes: 'color-yellow'
-                },
-                'green': {
-                    classes: 'color-green'
-                },
-            };
-            var style = map[row.row_color] || {};
+            var style = {};
+            if (isSuperAdmin) {
+                var map = {
+                    'red':    { classes: 'color-red' },
+                    'yellow': { classes: 'color-yellow' },
+                    'green':  { classes: 'color-green' },
+                };
+                style = map[row.row_color] || {};
+            }
             if (!row.can_edit) {
-                style.css = Object.assign({}, style.css, {
-                    opacity: '0.45'
-                });
+                style.css = Object.assign({}, style.css, { opacity: '0.45' });
             }
             return style;
         }
