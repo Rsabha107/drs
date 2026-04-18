@@ -136,7 +136,8 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold mb-1">Match <span class="text-muted fw-normal small">(optional)</span></label>
+                        <label class="form-label fw-semibold mb-1">Match <span
+                                class="text-muted fw-normal small">(optional)</span></label>
                         <select name="match_id" id="match_select" class="form-select form-select-sm"
                             {{ !$sheetType ? 'disabled' : '' }}>
                             <option value="">— All Matches —</option>
@@ -160,8 +161,8 @@
                     </div>
                     @if ($venueId || $matchId || ($sheetType ?? null))
                         <div class="col-md-1">
-                            <a href="{{ route('drs.admin.flat.list', ['event_id' => session()->get('EVENT_ID')]) }}" class="btn btn-sm btn-outline-secondary w-100"
-                                title="Clear filters">
+                            <a href="{{ route('drs.admin.flat.list', ['event_id' => session()->get('EVENT_ID')]) }}"
+                                class="btn btn-sm btn-outline-secondary w-100" title="Clear filters">
                                 <i class="fa-solid fa-xmark"></i>
                             </a>
                         </div>
@@ -230,10 +231,11 @@
                         data-icons-prefix="bx" data-icons="icons" data-show-refresh="true" data-show-columns="true"
                         data-show-toggle="true" data-show-fullscreen="true" data-fixed-scroll="true"
                         data-total-field="total" data-data-field="rows" data-page-list="[25, 50, 100, 200]"
-                        data-search="true" data-side-pagination="server" data-pagination="true" data-sort-name="start_time"
-                        data-sort-order="asc" data-trim-on-search="false" data-mobile-responsive="true"
-                        data-buttons-class="secondary" data-row-style="itemRowStyle" data-height="660"
-                        data-fixed-scroll="true" data-show-pagination-switch="true" data-query-params="queryParams">
+                        data-page-size="50" data-search="true" data-side-pagination="server" data-pagination="true"
+                        data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
+                        data-mobile-responsive="true" data-buttons-class="secondary" data-row-style="itemRowStyle"
+                        data-height="660" data-fixed-scroll="true" data-show-pagination-switch="true"
+                        data-query-params="queryParams">
                         <thead>
                             <tr>
                                 <th data-field="id" data-sortable="true" data-visible="false">ID</th>
@@ -290,7 +292,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Start Time</label>
-                                    <input type="time" name="start_time" id="add_start_time" class="form-control">
+                                    <input type="text" name="start_time" id="add_start_time"
+                                        class="form-control datetimepicker" placeholder="HH:MM"
+                                        pattern="[0-2][0-9]:[0-5][0-9]" maxlength="5"
+                                        data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">KO Offset
@@ -305,7 +310,9 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">End Time</label>
-                                    <input type="time" name="end_time" class="form-control">
+                                    <input type="text" name="end_time" class="form-control datetimepicker"
+                                        placeholder="HH:MM" pattern="[0-2][0-9]:[0-5][0-9]" maxlength="5"
+                                        data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Location</label>
@@ -368,8 +375,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Start Time</label>
-                                    <input type="time" name="start_time" id="edit_item_start_time"
-                                        class="form-control">
+                                    <input type="text" name="start_time" id="edit_item_start_time"
+                                        class="form-control datetimepicker" placeholder="HH:MM"
+                                        pattern="[0-2][0-9]:[0-5][0-9]" maxlength="5"
+                                        data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">KO Offset
@@ -384,7 +393,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">End Time</label>
-                                    <input type="time" name="end_time" id="edit_item_end_time" class="form-control">
+                                    <input type="text" name="end_time" id="edit_item_end_time"
+                                        class="form-control datetimepicker" placeholder="HH:MM"
+                                        pattern="[0-2][0-9]:[0-5][0-9]" maxlength="5"
+                                        data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Location</label>
@@ -453,7 +465,9 @@
             stSelect.disabled = true;
 
             fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId)
-                .then(function(r) { return r.json(); })
+                .then(function(r) {
+                    return r.json();
+                })
                 .then(function(types) {
                     stSelect.innerHTML = '<option value="">— Select Sheet Type —</option>';
                     types.forEach(function(t) {
@@ -473,7 +487,7 @@
         // Sheet Type → load matches (only those that have a sheet of this type for the venue)
         document.getElementById('sheet_type_select').addEventListener('change', function() {
             var sheetType = this.value;
-            var venueId   = document.getElementById('venue_select').value;
+            var venueId = document.getElementById('venue_select').value;
             resetMatchSelect();
             if (!sheetType || !venueId) return;
 
@@ -481,8 +495,11 @@
             matchSelect.innerHTML = '<option value="">— Loading… —</option>';
             matchSelect.disabled = true;
 
-            fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId + '&sheet_type=' + encodeURIComponent(sheetType) + '&list=matches')
-                .then(function(r) { return r.json(); })
+            fetch('/drs/admin/flat-list/sheet-types?venue_id=' + venueId + '&sheet_type=' + encodeURIComponent(
+                    sheetType) + '&list=matches')
+                .then(function(r) {
+                    return r.json();
+                })
                 .then(function(data) {
                     matchSelect.innerHTML = '<option value="">— All Matches —</option>';
                     if (data.length === 0) {
@@ -490,11 +507,13 @@
                         return;
                     }
                     data.forEach(function(m) {
-                        var date  = m.match_date ? new Date(m.match_date).toLocaleDateString('en-GB') : '';
+                        var date = m.match_date ? new Date(m.match_date).toLocaleDateString('en-GB') :
+                            '';
                         var teams = (m.pma1 || m.pma2) ? ' — ' + m.pma1 + ' vs ' + m.pma2 : '';
-                        var opt   = document.createElement('option');
+                        var opt = document.createElement('option');
                         opt.value = m.id;
-                        opt.textContent = 'M' + m.match_number + teams + (date ? ' (' + date + ')' : '');
+                        opt.textContent = 'M' + m.match_number + teams + (date ? ' (' + date + ')' :
+                        '');
                         matchSelect.appendChild(opt);
                     });
                     matchSelect.disabled = false;

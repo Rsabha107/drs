@@ -362,7 +362,7 @@
                         data-url="{{ route('drs.show.list', $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
                         data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
                         data-total-field="total" data-height="500" data-show-fullscreen="true" data-fixed-scroll="true"
-                        data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-search="true"
+                        data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
                         data-side-pagination="server" data-icon-size="sm" data-pagination="true"
                         data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
                          data-mobile-responsive="true" data-buttons-class="secondary"

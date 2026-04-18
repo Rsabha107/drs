@@ -89,7 +89,7 @@
                     data-loading-template="loadingTemplate" data-url="{{ route('drs.drs.list') }}" data-icons-prefix="bx"
                     data-icons="icons" data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
                     data-icon-size="sm"
-                    data-total-field="total" data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-search="true"
+                    data-total-field="total" data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
                     data-side-pagination="server" data-pagination="true" data-sort-name="run_date" data-sort-order="desc"
                     data-trim-on-search="false" data-mobile-responsive="true" data-buttons-class="secondary"
                     data-query-params="queryParams">
