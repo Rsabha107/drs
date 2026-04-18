@@ -267,7 +267,15 @@ class DailyRunSheetController extends Controller
         }
 
         $total = $query->count();
-        $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($item) use ($authUser, $userFaIds) {
+
+        $nullableColumns = ['start_time', 'end_time', 'countdown_to_ko', 'location'];
+        if (in_array($sort, $nullableColumns)) {
+            $query->orderByRaw("ISNULL(`{$sort}`) ASC, `{$sort}` {$order}");
+        } else {
+            $query->orderBy($sort, $order);
+        }
+
+        $transform = function ($item) use ($authUser, $userFaIds) {
             $sheetFaId = $item->runSheet?->functional_area_id;
             $canEdit   = $authUser->hasRole('SuperAdmin')
                 || ($sheetFaId && in_array($sheetFaId, $userFaIds));
@@ -284,7 +292,13 @@ class DailyRunSheetController extends Controller
                 'row_color'       => $item->row_color,
                 'can_edit'        => $canEdit,
             ];
-        });
+        };
+
+        // if ($fetchAll) {
+        //     $rows = $query->get()->map($transform);
+        // } else {
+            $rows = $query->paginate($limit)->through($transform);
+        // }
 
         return response()->json([
             'total' => $total,

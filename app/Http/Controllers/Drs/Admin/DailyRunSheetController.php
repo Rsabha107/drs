@@ -27,7 +27,7 @@ class DailyRunSheetController extends Controller
         if ($user->hasRole('Customer')) {
             $userFas   = $user->fa()->get(['functional_areas.id', 'functional_areas.title', 'functional_areas.fa_code']);
             $userFaIds = $userFas->pluck('id')->toArray();
-        }elseif ($user->hasRole('SuperAdmin')) {
+        } elseif ($user->hasRole('SuperAdmin')) {
             $userFas   = FunctionalArea::orderBy('fa_code')->get();
             $userFaIds = $userFas->pluck('id')->toArray();
         }
@@ -229,7 +229,15 @@ class DailyRunSheetController extends Controller
         }
 
         $total = $query->count();
-        $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($item) use ($koFormatted) {
+
+        $nullableColumns = ['start_time', 'end_time', 'countdown_to_ko', 'location'];
+        if (in_array($sort, $nullableColumns)) {
+            $query->orderByRaw("ISNULL(`{$sort}`) ASC, `{$sort}` {$order}");
+        } else {
+            $query->orderBy($sort, $order);
+        }
+
+        $rows  = $query->paginate($limit)->through(function ($item) use ($koFormatted) {
             $fa    = $item->runSheet?->functionalArea;
             $faLabel = $fa?->title ?? $fa?->name ?? ($item->functional_area ?? '-');
 
