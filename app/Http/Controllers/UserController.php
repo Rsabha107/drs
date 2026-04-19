@@ -158,7 +158,7 @@ class UserController extends Controller
             $rules = [
                 'name' => 'required|max:255',
                 'email' => 'required|email|unique:users,email',
-                'phone' => 'required|max:15',
+                'phone' => 'nullable|max:15',
                 'event_id' => 'required',
                 'roles' => 'required|array|min:1',
             ];
@@ -169,7 +169,7 @@ class UserController extends Controller
                 "email.required" => "Email is required",
                 "email.email" => "Provide a valid email",
                 "email.unique" => "Email already exists",
-                "phone.required" => "Phone is required",
+                "phone.max" => "Phone number cannot exceed 15 characters",
                 "client_id.required" => "Client selection is required",
             ]';
 

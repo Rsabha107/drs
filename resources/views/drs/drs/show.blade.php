@@ -133,13 +133,13 @@
                     data-bs-target="#add_item_modal">
                     <i class="fa-solid fa-plus me-1"></i>Add Item
                 </button>
-                <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal"
+                {{-- <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal"
                     data-bs-target="#copy_from_modal">
                     <i class="fa-solid fa-copy me-1"></i>Copy from DRS
                 </button>
                 <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
                     <i class="fa-solid fa-pen me-1"></i>Edit Header
-                </button>
+                </button> --}}
             @endif
             <a href="{{ route('drs.drs.export', $sheet->id) }}" class="btn btn-subtle-primary">
                 <i class="fa-solid fa-file-excel me-1"></i>Export Excel
