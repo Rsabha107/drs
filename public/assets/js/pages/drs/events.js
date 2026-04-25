@@ -1,6 +1,22 @@
 $(document).ready(function () {
     console.log("events.js file");
 
+    // Initialize flatpickr for datetimepicker inputs
+    var datetimepickers = document.querySelectorAll('.datetimepicker');
+    datetimepickers.forEach(function (element) {
+        var options = element.getAttribute('data-options');
+        if (options) {
+            try {
+                options = JSON.parse(options);
+            } catch (e) {
+                options = {};
+            }
+        } else {
+            options = {};
+        }
+        flatpickr(element, options);
+    });
+
     $(".js-select-event-assign-multiple-venue_id").select2({
         closeOnSelect: false,
         placeholder: "Select ...",
@@ -9,6 +25,31 @@ $(document).ready(function () {
     $(".js-select-event-assign-multiple-edit_venue_id").select2({
         closeOnSelect: false,
         placeholder: "Select ...",
+    });
+
+    // Reinitialize flatpickr when modals are opened
+    $('body').on('shown.bs.modal', '#create_event_modal', function() {
+        var dateInput = document.getElementById('eventStartDate');
+        if (dateInput && dateInput._flatpickr) {
+            dateInput._flatpickr.destroy();
+        }
+        var options = dateInput.getAttribute('data-options');
+        if (options) {
+            options = JSON.parse(options);
+        }
+        flatpickr(dateInput, options || {});
+    });
+
+    $('body').on('shown.bs.modal', '#edit_event_modal', function() {
+        var dateInput = document.getElementById('edit_event_start_date');
+        if (dateInput && dateInput._flatpickr) {
+            dateInput._flatpickr.destroy();
+        }
+        var options = dateInput.getAttribute('data-options');
+        if (options) {
+            options = JSON.parse(options);
+        }
+        flatpickr(dateInput, options || {});
     });
 
     $("body").on(
@@ -42,6 +83,18 @@ $(document).ready(function () {
 
                 $("#edit_event_id").val(response.op.id);
                 $("#edit_event_name").val(response.op.name);
+                $("#edit_event_start_date").val(response.op.event_start_date);
+                
+                // Format and set event_start_date for flatpickr
+                if (response.op.event_start_date) {
+                    var dateInput = document.getElementById('edit_event_start_date');
+                    if (dateInput._flatpickr) {
+                        dateInput._flatpickr.setDate(response.op.event_start_date);
+                    } else {
+                        $("#edit_event_start_date").val(response.op.event_start_date);
+                    }
+                }
+                
                 $("#edit_venue_id").val(eventVenues).trigger("change");
                 $("#editActiveFlag").val(response.op.active_flag);
                 $("#edit_event_table").val(table);

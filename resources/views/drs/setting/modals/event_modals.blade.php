@@ -17,6 +17,13 @@
                             placeholder="<?= get_label('please_enter_name', 'Please enter name') ?>" />
                     </div>
                     <div class="col-md-12 mb-3">
+                        <label for="eventStartDate" class="form-label"><?= get_label('event_start_date', 'Event Start Date') ?></label>
+                        <div class="flatpickr-input-container">
+                            <input type="text" id="eventStartDate" class="form-control datetimepicker" name="event_start_date" placeholder="dd/mm/yyyy" data-options='{"dateFormat":"d/m/Y","disableMobile":true}' />
+                            
+                        </div>
+                    </div>
+                    <div class="col-md-12 mb-3">
                         <x-formy.select_multiple class="col-md-12 mb-3" name="venue_id[]" elementId="venue_id"
                             label="Venue assignment (multiple)" :forLoopCollection="$venues" itemIdForeach="id"
                             itemTitleForeach="title" required="" style="width: 100%" edit="0" />
@@ -63,6 +70,15 @@
                                     class="asterisk">*</span></label>
                             <input type="text" id="edit_event_name" class="form-control" name="name"
                                 placeholder="<?= get_label('please_enter_name', 'Please enter name') ?>" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="edit_event_start_date" class="form-label"><?= get_label('event_start_date', 'Event Start Date') ?></label>
+                            <div class="flatpickr-input-container">
+                                <input type="text" id="edit_event_start_date" class="form-control datetimepicker" name="event_start_date" placeholder="dd/mm/yyyy" data-options='{"dateFormat":"d/m/Y","disableMobile":true}' />
+                                
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-12 mb-3">

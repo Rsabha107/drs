@@ -8,6 +8,7 @@ use App\Models\Drs\ParticipantDocument;
 use App\Models\Drs\TempUpload;
 use App\Models\Drs\Event;
 use App\Models\Drs\Venue;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,11 @@ class EventController extends Controller
                 'download_url' => route('event.docs.download', $d->id),
                 'delete_url' => route('event.docs.destroy', $d->id),
             ]);
+
+        // Format event_start_date to d/m/Y for flatpickr compatibility
+        if ($op->event_start_date) {
+            $op->event_start_date = format_date($op->event_start_date, 'd/m/Y');
+        }
 
         return response()->json(['op' => $op, 'venues' => $op->venues, 'event_docs' => $docs, 'image_path' => route('drs.setting.event.file', $op->id)]);
         // return response()->json(['op' => $op, 'venues' => $op->venues, 'image_path' => $image_path]);
@@ -139,6 +145,7 @@ class EventController extends Controller
                 'image' => $image,
                 // 'id' => '<div class="align-middle white-space-wrap fw-bold fs-10 ps-2">' .$op->id. '</div>',
                 'title' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->name . '</div>',
+                'event_start_date' => '<div class=\"align-middle white-space-wrap fs-9 ps-3\">' . ($op->event_start_date ? format_date($op->event_start_date, 'd/m/Y') : '-') . '</div>',
                 'status' => '<span class="badge badge-phoenix fs--2 align-middle white-space-wrap ms-3 badge-phoenix-' . $op->active_status->color . ' " style="cursor: pointer;" id="editDriverStatus" data-id="' . $op->id . '" data-table="drivers_table"><span class="badge-label">' . $op->active_status->name . '</span><span class="ms-1 uil-edit-alt" style="height:12.8px;width:12.8px;cursor: pointer;"></span></span>',
                 'venues' => $venues_display,
                 'actions' => $update_action . $delete_action,
@@ -158,15 +165,16 @@ class EventController extends Controller
         Log::info('EventController::store called');
 
         $validator = Validator::make($request->all(), [
-            'name'        => 'required|string|max:255',
-            'venue_id'    => 'nullable|array',
-            'venue_id.*'  => 'exists:venues,id',
+            'name'              => 'required|string|max:255',
+            'event_start_date'  => 'nullable|date',
+            'venue_id'          => 'nullable|array',
+            'venue_id.*'        => 'exists:venues,id',
 
             // only for the logo (Dropify)
-            'file_name'   => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
+            'file_name'         => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
 
             // FilePond temp ids
-            'qid_server_ids' => 'nullable|string',
+            'qid_server_ids'    => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -189,10 +197,20 @@ class EventController extends Controller
 
         try {
             $op = new Event();
-            $op->name        = $request->name;
-            $op->active_flag = 1;
-            $op->created_by  = $userId;
-            $op->updated_by  = $userId;
+            $op->name               = $request->name;
+            
+            // Convert date format from d/m/Y to Y-m-d
+            if ($request->event_start_date) {
+                try {
+                    $op->event_start_date = Carbon::createFromFormat('d/m/Y', $request->event_start_date)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $op->event_start_date = $request->event_start_date;
+                }
+            }
+            
+            $op->active_flag        = 1;
+            $op->created_by         = $userId;
+            $op->updated_by         = $userId;
 
             // =========================
             // Upload logo (Dropify)
@@ -266,18 +284,19 @@ class EventController extends Controller
 
         // ✅ validate
         $rules = [
-            'id'          => 'required|exists:events,id',
-            'name'        => 'required|string|max:255',
-            'active_flag' => 'required|in:1,2',
-            'venue_id'    => 'nullable|array',
-            'venue_id.*'  => 'exists:venues,id',
+            'id'                => 'required|exists:events,id',
+            'name'              => 'required|string|max:255',
+            'event_start_date'  => 'nullable|date',
+            'active_flag'       => 'required|in:1,2',
+            'venue_id'          => 'nullable|array',
+            'venue_id.*'        => 'exists:venues,id',
 
             // Only keep this if you really upload event_logo via normal input
-            'file_name'   => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
+            'file_name'         => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
 
             // staged deletes field
-            'delete_doc_ids' => 'nullable|string',
-            'qid_server_ids' => 'nullable|string',
+            'delete_doc_ids'    => 'nullable|string',
+            'qid_server_ids'    => 'nullable|string',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -297,9 +316,19 @@ class EventController extends Controller
             // =========================
             // 1) Update event fields
             // =========================
-            $op->name       = $request->name;
-            $op->active_flag = $request->active_flag;
-            $op->updated_by = $userId;
+            $op->name              = $request->name;
+            
+            // Convert date format from d/m/Y to Y-m-d
+            if ($request->event_start_date) {
+                try {
+                    $op->event_start_date = Carbon::createFromFormat('d/m/Y', $request->event_start_date)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $op->event_start_date = $request->event_start_date;
+                }
+            }
+            
+            $op->active_flag       = $request->active_flag;
+            $op->updated_by        = $userId;
 
             // =========================
             // 2) Update event logo (optional - normal upload, not FilePond)

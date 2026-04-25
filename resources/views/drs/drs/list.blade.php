@@ -36,11 +36,12 @@
                     <option value="{{ $fa->id }}">{{ $fa->title }}</option>
                 @endforeach
             </select> --}}
-            <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
-                data-bs-target="#create_drs_modal">
-                <i class="fa-solid fa-plus me-1"></i>New Run Sheet
-            </button>
+
             @unless (auth()->user()->hasRole('Customer'))
+                <button type="button" class="btn btn-subtle-primary px-3" data-bs-toggle="modal"
+                    data-bs-target="#create_drs_modal">
+                    <i class="fa-solid fa-plus me-1"></i>New Run Sheet
+                </button>
                 <a href="{{ route('drs.admin.venue.match') }}" class="btn btn-success">
                     <i class="fa-solid fa-eye me-1"></i>Admin View
                 </a>
@@ -88,11 +89,10 @@
                     data-classes="table table-hover fs-9 mb-0 border-top border-translucent"
                     data-loading-template="loadingTemplate" data-url="{{ route('drs.drs.list') }}" data-icons-prefix="bx"
                     data-icons="icons" data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
-                    data-icon-size="sm"
-                    data-total-field="total" data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
-                    data-side-pagination="server" data-pagination="true" data-sort-name="run_date" data-sort-order="desc"
-                    data-trim-on-search="false" data-mobile-responsive="true" data-buttons-class="secondary"
-                    data-query-params="queryParams">
+                    data-icon-size="sm" data-total-field="total" data-data-field="rows" data-page-list="[10, 20, 50, 100]"
+                    data-page-size="50" data-search="true" data-side-pagination="server" data-pagination="true"
+                    data-sort-name="run_date" data-sort-order="desc" data-trim-on-search="false"
+                    data-mobile-responsive="true" data-buttons-class="secondary" data-query-params="queryParams">
                     <thead>
                         <tr>
                             <th data-field="id" data-sortable="true" data-visible="false">ID</th>
@@ -250,8 +250,8 @@
 
             function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId) {
                 var venueId = $venueSelect.val();
-                var $form   = $matchSelect.closest('form');
-                var dfd     = $.Deferred();
+                var $form = $matchSelect.closest('form');
+                var dfd = $.Deferred();
 
                 $matchSelect.empty().append('<option value="">N/A</option>').prop('disabled', true);
                 setMatchDependents($form, true);
@@ -270,7 +270,8 @@
                     dataType: 'json',
                     success: function(matches) {
                         $matchSelect.empty().append(
-                            '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>');
+                            '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>'
+                            );
                         $.each(matches, function(i, m) {
                             var label = 'M' + m.match_number + ' — ' + m.match_date;
                             var selected = (selectedMatchId && m.id == selectedMatchId) ?
@@ -426,7 +427,8 @@
                         // Only load matches for MD sheets; keep match disabled for all others
                         $('#edit_drs_venue_id').val(data.venue_id);
                         if (data.sheet_type === 'MD') {
-                            loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'), data.match_id)
+                            loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'),
+                                    data.match_id)
                                 .always(function() {
                                     $('#edit_drs_modal').modal('show');
                                 });
