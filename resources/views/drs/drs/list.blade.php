@@ -180,6 +180,10 @@
             fullscreen: 'bx-fullscreen',
             columns: 'bx-list-ul',
         };
+        
+        // User role for permission checks
+        var userRole = '{{ auth()->user()->roles()->first()?->name ?? "Guest" }}';
+        var canEditDeleteDrs = {{ auth()->user()->hasRole('SuperAdmin') ? 'true' : 'false' }};
 
         function loadingTemplate() {
             return '<i class="bx bx-loader-alt bx-spin bx-flip-vertical"></i>';
@@ -200,17 +204,31 @@
         }
 
         function drsActionsFormatter(value, row) {
-            return [
-                '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-secondary me-1" title="View">',
-                '<i class="fa-solid fa-eye"></i>',
-                '</a>',
-                '<button class="btn btn-sm btn-phoenix-warning me-1 drs-edit" data-id="' + row.id + '" title="Edit">',
-                '<i class="fa-solid fa-pen"></i>',
-                '</button>',
-                '<button class="btn btn-sm btn-phoenix-danger drs-delete" data-id="' + row.id + '" title="Delete">',
-                '<i class="fa-solid fa-trash"></i>',
-                '</button>',
-            ].join('');
+            var actions = [];
+            
+            if (canEditDeleteDrs) {
+                // SuperAdmin: View, Edit, Delete
+                actions.push(
+                    '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-secondary me-1" title="View">',
+                    '<i class="fa-solid fa-eye"></i>',
+                    '</a>',
+                    '<button class="btn btn-sm btn-phoenix-warning me-1 drs-edit" data-id="' + row.id + '" title="Edit">',
+                    '<i class="fa-solid fa-pen"></i>',
+                    '</button>',
+                    '<button class="btn btn-sm btn-phoenix-danger drs-delete" data-id="' + row.id + '" title="Delete">',
+                    '<i class="fa-solid fa-trash"></i>',
+                    '</button>'
+                );
+            } else {
+                // Customer: Add Items button
+                actions.push(
+                    '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-primary" title="Add Items">',
+                    '<i class="fa-solid fa-plus me-1"></i>Add Items',
+                    '</a>'
+                );
+            }
+            
+            return actions.join('');
         }
 
         $(document).ready(function() {
