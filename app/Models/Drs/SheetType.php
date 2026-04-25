@@ -39,7 +39,8 @@ class SheetType extends Model
      */
     public static function forCustomer($eventId = null, $venueId = null)
     {
-        $query = self::where('available_to_customer', true);
+        $query = self::where('available_to_customer', true)
+            ->with('match');
 
         if ($eventId) {
             $query->where(function ($q) use ($eventId) {
@@ -63,7 +64,8 @@ class SheetType extends Model
      */
     public static function forAdmin($eventId = null, $venueId = null)
     {
-        $query = self::query();
+        $query = self::query()
+            ->with('match');
 
         if ($eventId) {
             $query->where(function ($q) use ($eventId) {
@@ -80,5 +82,29 @@ class SheetType extends Model
         }
 
         return $query->orderBy('sort_order')->get();
+    }
+
+    /**
+     * Get formatted title with calculated MD-x date
+     */
+    public function getFormattedTitleAttribute()
+    {
+        $dateLabel = $this->title; // fallback to title
+        
+        if ($this->match && $this->match->match_date) {
+            $daysOffset = 0;
+            if (preg_match('/MD-?(\d+)/', $this->code, $matches)) {
+                $daysOffset = (int)$matches[1];
+                $calcDate = \Carbon\Carbon::parse($this->match->match_date)->subDays($daysOffset);
+                $dateLabel = $calcDate->format('d/m/Y') . ' - ' . $this->code;
+            } elseif ($this->code === 'MD') {
+                $dateLabel = \Carbon\Carbon::parse($this->match->match_date)->format('d/m/Y') . ' - MD';
+            }
+        } else {
+            // No match associated, just show code
+            $dateLabel = $this->code;
+        }
+
+        return $dateLabel;
     }
 }

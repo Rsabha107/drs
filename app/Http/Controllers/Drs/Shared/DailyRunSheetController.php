@@ -123,7 +123,7 @@ class DailyRunSheetController extends Controller
 
             return [
                 'id'               => $s->id,
-                'sheet_type'       => '<span class="badge bg-primary">' . e($s->run_date_dmy . ' ' . $sheetTypeCode) . '</span>',
+                'sheet_type'       => '<span class="badge bg-primary">' . e($mdDate . ' - ' . $sheetTypeCode) . '</span>',
                 'venue'            => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
                 'match'            => '<span class="fs-9">' . e($s->match ? $s->match->match_number : '-') . '</span>',
                 'teams'            => '<span class="fs-9">' . e($s->match ? $s->match->pma1 . ' vs ' . $s->match->pma2 : '-') . '</span>',

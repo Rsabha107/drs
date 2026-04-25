@@ -74,7 +74,7 @@
                         <select id="filter_type" class="form-select form-select-sm" style="width:140px;">
                             <option value="">All Types</option>
                             @foreach ($sheetTypes as $t)
-                                <option>{{ $t }}</option>
+                                <option value="{{ $t->id }}">{{ $t->formatted_title }}</option>
                             @endforeach
                         </select>
                         <select id="filter_functional_area" class="form-select form-select-sm" style="width:160px;">
@@ -223,11 +223,15 @@
             // ── Teams helper ───────────────────────────────────────────
             function fillTeams($form, pma1, pma2) {
                 var teamsInput = $form.find('[id$="_drs_teams"]');
+                // Temporarily enable and remove readonly to set value
+                teamsInput.prop('disabled', false).prop('readonly', false);
                 if (pma1 || pma2) {
                     teamsInput.val((pma1 || '?') + ' vs ' + (pma2 || '?'));
                 } else {
                     teamsInput.val('');
                 }
+                // Re-disable and set readonly
+                teamsInput.prop('disabled', true).prop('readonly', true);
             }
 
             // ── Helpers ────────────────────────────────────────────────
@@ -243,7 +247,8 @@
             // ── Dependent match select ──────────────────────────────────
             function setMatchDependents($form, disabled) {
                 $form.find('[name="gates_opening"], [name="kick_off"]').prop('disabled', disabled);
-                $form.find('[id$="_drs_teams"]').prop('disabled', disabled);
+                var $teams = $form.find('[id$="_drs_teams"]');
+                $teams.prop('disabled', disabled).prop('readonly', disabled);
             }
 
             function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId, onComplete) {
@@ -583,16 +588,11 @@
                             var $option = $sheetTypeSelect.find('option:selected');
                             var sheetTypeCode = $option.data('code');
                             
-                            // Load matches if MD type, otherwise clear them
-                            if (sheetTypeCode === 'MD') {
-                                loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, data.match_id)
-                                    .always(function() {
-                                        $('#edit_drs_modal').modal('show');
-                                    });
-                            } else {
-                                clearMatchSelect($matchSelect, $('#edit_drs_form'));
-                                $('#edit_drs_modal').modal('show');
-                            }
+                            // Load matches for both MD and non-MD types
+                            loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, data.match_id)
+                                .always(function() {
+                                    $('#edit_drs_modal').modal('show');
+                                });
                         });
                     },
                     error: function() {

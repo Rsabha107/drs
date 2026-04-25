@@ -136,16 +136,16 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::post('/drs/setting/event/store', 'store')->name('drs.setting.event.store');
     });
 
-        //Sheet Type
-         Route::controller(SheetTypeController::class)->group(function () {
-            Route::get('/drs/setting/sheet-type', 'index')->name('drs.setting.sheet.type');
-            Route::get('/drs/setting/sheet-type/list', 'list')->name('drs.setting.sheet.type.list');
-            Route::get('/drs/setting/sheet-type/get/{id}', 'get')->name('drs.setting.sheet.type.get');
-            Route::get('/drs/setting/sheet-type/get-matches', 'getMatches')->name('drs.setting.sheet.type.get-matches');
-            Route::post('/drs/setting/sheet-type/update', 'update')->name('drs.setting.sheet.type.update');
-            Route::delete('/drs/setting/sheet-type/delete/{id}', 'delete')->name('drs.setting.sheet.type.delete');
-            Route::post('/drs/setting/sheet-type/store', 'store')->name('drs.setting.sheet.type.store');
-        });
+    //Sheet Type
+    Route::controller(SheetTypeController::class)->group(function () {
+        Route::get('/drs/setting/sheet-type', 'index')->name('drs.setting.sheet.type');
+        Route::get('/drs/setting/sheet-type/list', 'list')->name('drs.setting.sheet.type.list');
+        Route::get('/drs/setting/sheet-type/get/{id}', 'get')->name('drs.setting.sheet.type.get');
+        Route::get('/drs/setting/sheet-type/get-matches', 'getMatches')->name('drs.setting.sheet.type.get-matches');
+        Route::post('/drs/setting/sheet-type/update', 'update')->name('drs.setting.sheet.type.update');
+        Route::delete('/drs/setting/sheet-type/delete/{id}', 'delete')->name('drs.setting.sheet.type.delete');
+        Route::post('/drs/setting/sheet-type/store', 'store')->name('drs.setting.sheet.type.store');
+    });
 
     Route::get('/auth/ms-signup', [DrsAuthAdminController::class, 'msSignUp'])->name('auth.ms.signup');
     Route::post('/signup/ms/store', [UserController::class, 'msStore'])->name('admin.signup.ms.store');

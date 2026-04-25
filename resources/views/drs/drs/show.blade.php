@@ -124,7 +124,8 @@
             <ol class="breadcrumb breadcrumb-style1 mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('drs.drs.index') }}">Daily Run Sheets</a></li>
-                <li class="breadcrumb-item active">{{ $sheet->sheetType?->code ?? 'N/A' }} &mdash; {{ $sheet->run_date_dmy }}</li>
+                <li class="breadcrumb-item active">{{ $sheet->sheetType?->code ?? 'N/A' }} &mdash; {{ $sheet->run_date_dmy }}
+                </li>
             </ol>
         </nav>
         <div class="d-flex gap-2">
@@ -133,13 +134,13 @@
                     data-bs-target="#add_item_modal">
                     <i class="fa-solid fa-plus me-1"></i>Add Item
                 </button>
-                {{-- <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal"
+                <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal"
                     data-bs-target="#copy_from_modal">
                     <i class="fa-solid fa-copy me-1"></i>Copy from DRS
                 </button>
                 <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
                     <i class="fa-solid fa-pen me-1"></i>Edit Header
-                </button> --}}
+                </button>
             @endif
             <a href="{{ route('drs.drs.export', $sheet->id) }}" class="btn btn-subtle-primary">
                 <i class="fa-solid fa-file-excel me-1"></i>Export Excel
@@ -280,7 +281,7 @@
                             </div>
                         </div>
                     </div>
-                                        <div class="col-sm-2 mb-1">
+                    <div class="col-sm-2 mb-1">
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-flex align-items-center mb-3">
@@ -297,7 +298,9 @@
                                 </div>
                                 <div class="text-muted mt-4">
                                     <h4>
-                                        {{ $sheet->gates_opening ? \Carbon\Carbon::parse($sheet->gates_opening)->format('H:i') : 'N/A' }} : {{ $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : 'N/A' }}
+                                        {{ $sheet->gates_opening ? \Carbon\Carbon::parse($sheet->gates_opening)->format('H:i') : 'N/A' }}
+                                        :
+                                        {{ $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : 'N/A' }}
 
                                         </i>
                                     </h4>
@@ -309,49 +312,6 @@
                 <!-- end row -->
             </div>
 
-            {{-- Sheet header --}}
-            {{-- <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                    <h4 class="fw-bold mb-1" id="show-sheet-type">Daily Run Sheet ({{ $sheet->sheetType?->code ?? 'N/A' }})</h4>
-                    <div class="text-muted small">{{ $event->name ?? '' }}</div>
-                </div>
-                <table class="drs-header-table table table-bordered mb-0" style="width:340px;">
-                    <tr>
-                        <td>Venue</td>
-                        <td class="fw-semibold" id="show-venue">{{ $sheet->venue->short_name ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Match No</td>
-                        <td id="show-match">{{ $sheet->match ? 'M' . $sheet->match->match_number : 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Date</td>
-                        <td id="show-run-date">{{ $sheet->run_date_dmy }}</td>
-                    </tr>
-                    <tr>
-                        <td>Team</td>
-                        <td id="show-team">
-                            {{ $sheet->match ? $sheet->match->pma1 . ' vs ' . $sheet->match->pma2 : 'N/A' }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Gates Opening</td>
-                        <td id="show-gates">
-                            {{ $sheet->gates_opening ? \Carbon\Carbon::parse($sheet->gates_opening)->format('H:i') : 'N/A' }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Kick-Off</td>
-                        <td id="show-kickoff">
-                            {{ $sheet->kick_off ? \Carbon\Carbon::parse($sheet->kick_off)->format('H:i') : 'N/A' }}</td>
-                    </tr>
-                </table>
-            </div> --}}
-
-            {{-- Items table --}}
-            {{-- <table id="items_table"></table> --}}
-
-
             <div class="card mb-4 mt-3">
 
                 {{-- <div class="card-body"> --}}
@@ -360,13 +320,12 @@
                         data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
                         data-row-style="itemRowStyle" data-loading-template="loadingTemplate"
                         data-url="{{ route('drs.show.list', $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
-                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true"
-                        data-total-field="total" data-height="500" data-show-fullscreen="true" data-fixed-scroll="true"
-                        data-data-field="rows" data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
+                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true" data-total-field="total"
+                        data-height="500" data-show-fullscreen="true" data-fixed-scroll="true" data-data-field="rows"
+                        data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
                         data-side-pagination="server" data-icon-size="sm" data-pagination="true"
                         data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
-                         data-mobile-responsive="true" data-buttons-class="secondary"
-                        data-query-params="queryParams">
+                        data-mobile-responsive="true" data-buttons-class="secondary" data-query-params="queryParams">
                         <thead>
                             <tr>
                                 <th data-field="id" data-sortable="true" data-visible="false">ID</th>
@@ -413,7 +372,8 @@
                 <form id="add_item_form" novalidate class="needs-validation">
                     @csrf
                     <input type="hidden" name="run_sheet_id" value="{{ $sheet->id }}">
-                    <input type="hidden" name="functional_area" value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
+                    <input type="hidden" name="functional_area"
+                        value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-12">
@@ -424,7 +384,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Start Time</label>
-                                <input type="text" name="start_time" id="add_start_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                <input type="text" name="start_time" id="add_start_time"
+                                    class="form-control datetimepicker" placeholder="HH:MM"
                                     data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-4">
@@ -440,7 +401,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">End Time</label>
-                                <input type="text" name="end_time" id="add_end_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                <input type="text" name="end_time" id="add_end_time"
+                                    class="form-control datetimepicker" placeholder="HH:MM"
                                     data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-6">
@@ -503,7 +465,8 @@
                 <form id="edit_item_form" novalidate class="needs-validation">
                     @csrf
                     <input type="hidden" name="id" id="edit_item_id">
-                    <input type="hidden" name="functional_area" value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
+                    <input type="hidden" name="functional_area"
+                        value="{{ $sheet->functionalArea ? $sheet->functionalArea->fa_code . ' — ' . $sheet->functionalArea->title : '' }}">
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-12">
@@ -513,7 +476,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Start Time</label>
-                                <input type="text" name="start_time" id="edit_item_start_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                <input type="text" name="start_time" id="edit_item_start_time"
+                                    class="form-control datetimepicker" placeholder="HH:MM"
                                     data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-4">
@@ -529,7 +493,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">End Time</label>
-                                <input type="text" name="end_time" id="edit_item_end_time" class="form-control datetimepicker" placeholder="HH:MM"
+                                <input type="text" name="end_time" id="edit_item_end_time"
+                                    class="form-control datetimepicker" placeholder="HH:MM"
                                     data-options='{"enableTime":true,"noCalendar":true,"dateFormat":"H:i","time_24hr":true,"disableMobile":true,"allowInput":true}'>
                             </div>
                             <div class="col-md-6">
@@ -678,14 +643,22 @@
             var style = {};
             if (isSuperAdmin) {
                 var map = {
-                    'red':    { classes: 'color-red' },
-                    'yellow': { classes: 'color-yellow' },
-                    'green':  { classes: 'color-green' },
+                    'red': {
+                        classes: 'color-red'
+                    },
+                    'yellow': {
+                        classes: 'color-yellow'
+                    },
+                    'green': {
+                        classes: 'color-green'
+                    },
                 };
                 style = map[row.row_color] || {};
             }
             if (!row.can_edit) {
-                style.css = Object.assign({}, style.css, { opacity: '0.45' });
+                style.css = Object.assign({}, style.css, {
+                    opacity: '0.45'
+                });
             }
             return style;
         }
@@ -1036,7 +1009,8 @@
                     $('#edit_item_id').val(data.id);
                     $('#edit_item_title').val(data.title);
                     setTimeInput('edit_item_start_time', data.start_time);
-                    $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass('is-invalid');
+                    $('#edit_countdown_to_ko').val(calcKoOffset(data.start_time)).removeClass(
+                        'is-invalid');
                     setTimeInput('edit_item_end_time', data.end_time);
                     $('#edit_item_location').val(data.location);
                     $('#edit_item_description').val(data.description);
@@ -1215,8 +1189,8 @@
         });
 
         // ── Copy from DRS ───────────────────────────────────────────────
-        var copySourceUrl  = '{{ route('drs.drs.copy.source', $sheet->id) }}';
-        var copyFromUrl    = '{{ route('drs.drs.copy.from',   $sheet->id) }}';
+        var copySourceUrl = '{{ route('drs.drs.copy.source', $sheet->id) }}';
+        var copyFromUrl = '{{ route('drs.drs.copy.from', $sheet->id) }}';
 
         $('#copy_from_modal').on('show.bs.modal', function() {
             var $sel = $('#copy_source_select');
@@ -1240,9 +1214,9 @@
         });
 
         $('#copy_source_select').on('change', function() {
-            var $opt   = $(this).find('option:selected');
-            var count  = parseInt($opt.data('count')) || 0;
-            var $btn   = $('#copy_confirm_btn');
+            var $opt = $(this).find('option:selected');
+            var count = parseInt($opt.data('count')) || 0;
+            var $btn = $('#copy_confirm_btn');
             if (!$(this).val()) {
                 $('#copy_preview').text('');
                 $btn.prop('disabled', true);
@@ -1266,7 +1240,10 @@
             $.ajax({
                 url: copyFromUrl,
                 type: 'POST',
-                data: { _token: '{{ csrf_token() }}', source_id: sourceId },
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    source_id: sourceId
+                },
                 dataType: 'json',
                 success: function(res) {
                     if (res.error) {
@@ -1281,7 +1258,8 @@
                     toastr.error('Copy failed. Please try again.');
                 },
                 complete: function() {
-                    $btn.html('<i class="fa-solid fa-copy me-1"></i>Copy Items').prop('disabled', false);
+                    $btn.html('<i class="fa-solid fa-copy me-1"></i>Copy Items').prop('disabled',
+                    false);
                 }
             });
         });
@@ -1295,11 +1273,15 @@
         // ── Helpers: match loading & teams fill ─────────────────────────
         function fillTeams($form, pma1, pma2) {
             var $t = $form.find('[id$="_drs_teams"]');
+            // Temporarily enable and remove readonly to set value
+            $t.prop('disabled', false).prop('readonly', false);
             if (pma1 || pma2) {
                 $t.val((pma1 || '?') + ' vs ' + (pma2 || '?'));
             } else {
                 $t.val('');
             }
+            // Re-disable and set readonly
+            $t.prop('disabled', true).prop('readonly', true);
         }
 
         function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId, $form) {
@@ -1343,16 +1325,213 @@
             });
         }
 
-        // Match change → fill teams
-        $('body').on('change', '#edit_drs_match_id', function() {
-            var $opt = $(this).find('option:selected');
-            fillTeams($('#edit_drs_form'), $opt.data('pma1'), $opt.data('pma2'));
+        // ── Load Sheet Types by Venue ───────────────────────────────
+        function loadSheetTypes($venueSelect, $sheetTypeSelect) {
+            var venueId = $venueSelect.val();
+            var dfd = $.Deferred();
+
+            $sheetTypeSelect.empty().append('<option value="">Loading…</option>').prop('disabled', true);
+
+            if (!venueId) {
+                $sheetTypeSelect.empty().append('<option value="">Select venue first</option>').prop('disabled', true);
+                dfd.resolve();
+                return dfd.promise();
+            }
+
+            $.ajax({
+                url: '{{ route("drs.drs.get-sheet-types") }}',
+                type: 'GET',
+                dataType: 'json',
+                data: { venue_id: venueId },
+                headers: { "X-CSRF-TOKEN": $('input[name="_token"]').val() },
+                success: function(response) {
+                    $sheetTypeSelect.empty();
+                    
+                    if (response.types && response.types.length > 0) {
+                        $sheetTypeSelect.append('<option value="">Select type</option>');
+                        $.each(response.types, function(i, type) {
+                            $sheetTypeSelect.append(
+                                '<option value="' + type.id + '" data-code="' + type.code + '" data-title="' + type.title + '">' + type.title + '</option>'
+                            );
+                        });
+                        $sheetTypeSelect.prop('disabled', false);
+                    } else {
+                        $sheetTypeSelect.append('<option value="">No types available</option>').prop('disabled', true);
+                    }
+                    dfd.resolve();
+                },
+                error: function() {
+                    $sheetTypeSelect.empty().append('<option value="">— could not load types —</option>').prop('disabled', true);
+                    dfd.reject();
+                }
+            });
+
+            return dfd.promise();
+        }
+
+        // ── Load Matches by Sheet Type ───────────────────────────────
+        function loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, selectedMatchId) {
+            var venueId = $venueSelect.val();
+            var sheetTypeId = $sheetTypeSelect.val();
+            var $form = $matchSelect.closest('form');
+            var dfd = $.Deferred();
+
+            $matchSelect.empty().append('<option value="">N/A</option>').prop('disabled', true);
+
+            if (!venueId || !sheetTypeId) {
+                $matchSelect.append('<option value="" disabled selected>— select venue and sheet type first —</option>');
+                dfd.resolve();
+                return dfd.promise();
+            }
+
+            $matchSelect.append('<option value="" disabled selected>Loading…</option>');
+
+            $.ajax({
+                url: '/drs/sheet-type/matches',
+                type: 'GET',
+                dataType: 'json',
+                data: { sheet_type_id: sheetTypeId, venue_id: venueId },
+                success: function(matches) {
+                    populateMatchSelect($matchSelect, $form, matches, selectedMatchId, null, $sheetTypeSelect.find('option:selected').data('code'));
+                    dfd.resolve();
+                },
+                error: function() {
+                    $matchSelect.empty().append('<option value="">— could not load matches —</option>');
+                    dfd.reject();
+                }
+            });
+
+            return dfd.promise();
+        }
+
+        // ── Populate Match Select ────────────────────────────────────
+        function populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete, sheetTypeCode) {
+            $matchSelect.empty().append(
+                '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>'
+            );
+            $.each(matches, function(i, m) {
+                var label = 'M' + m.match_number + ' — ' + m.match_date;
+                var selected = (selectedMatchId && m.id == selectedMatchId) ? ' selected' : '';
+                $matchSelect.append(
+                    '<option value="' + m.id + '"' +
+                    ' data-date="' + m.match_date + '"' +
+                    ' data-pma1="' + (m.pma1 || '') + '"' +
+                    ' data-pma2="' + (m.pma2 || '') + '"' +
+                    ' data-gates-opening="' + (m.gates_opening || '') + '"' +
+                    ' data-kick-off="' + (m.kick_off || '') + '"' +
+                    selected + '>' + label + '</option>'
+                );
+            });
+
+            $matchSelect.prop('disabled', false);
+
+            // If a match was preselected, fill date and teams immediately
+            if (selectedMatchId) {
+                var $selected = $matchSelect.find('option:selected');
+                var date = $selected.data('date');
+                if (date) $form.find('[name="run_date"]').val(date);
+                fillTeams($form, $selected.data('pma1'), $selected.data('pma2'));
+                
+                // Fill gates opening and kickoff only for MD sheet types
+                if (sheetTypeCode === 'MD') {
+                    var gatesOpening = $selected.data('gates-opening');
+                    var kickOff = $selected.data('kick-off');
+                    if (gatesOpening) $form.find('[name="gates_opening"]').val(gatesOpening);
+                    if (kickOff) $form.find('[name="kick_off"]').val(kickOff);
+                }
+            }
+
+            // Call completion callback if provided
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
+        }
+
+        // ── Clear Match Select ───────────────────────────────────────
+        function clearMatchSelect($matchSelect, $form) {
+            $matchSelect.empty()
+                .append('<option value="">N/A</option>')
+                .prop('disabled', true);
+            $form.find('[name="gates_opening"], [name="kick_off"]').val('').prop('disabled', true);
+        }
+
+        // ── Sheet type change: Auto-populate date and teams ───────────────────
+        function onSheetTypeChange($sheetTypeSelect, $form) {
+            var $opt = $sheetTypeSelect.find('option:selected');
+            var sheetTypeCode = $opt.data('code');
+            var sheetTypeTitle = $opt.data('title');
+            var $runDateInput = $form.find('[name="run_date"]');
+            var $matchSelect = $form.find('[name="match_id"]');
+            var $venueSelect = $form.find('[name="venue_id"]');
+
+            // Extract date from title (e.g., "27/03/2026 - MD-3" → "27/03/2026")
+            if (sheetTypeTitle && sheetTypeTitle.includes(' - ')) {
+                var mdDate = sheetTypeTitle.split(' - ')[0].trim();
+                // Convert d/m/Y to Y-m-d for the date input
+                var parts = mdDate.split('/');
+                if (parts.length === 3) {
+                    var isoDate = parts[2] + '-' + parts[1] + '-' + parts[0];
+                    $runDateInput.val(isoDate);
+                }
+            }
+
+            // Show/hide FA hint based on sheet type
+            var formPrefix = $form.attr('id').replace('_form', '');
+            if (sheetTypeCode === 'MD') {
+                $('#' + formPrefix + '_drs_fa_hint').removeClass('d-none');
+            } else {
+                $('#' + formPrefix + '_drs_fa_hint').addClass('d-none');
+            }
+
+            // Load matches filtered by this sheet type and auto-select first match
+            loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, null).done(function() {
+                // After matches load, auto-select the first non-NA match
+                var $firstMatch = $matchSelect.find('option:not([value=""])').first();
+                if ($firstMatch.length) {
+                    $matchSelect.val($firstMatch.val());
+                    // Trigger change to populate match date, teams, gates opening, kickoff
+                    $matchSelect.trigger('change');
+                }
+            });
+        }
+
+        // Sheet type change in edit modal
+        $('#edit_drs_sheet_type').on('change', function() {
+            var $form = $('#edit_drs_form');
+            onSheetTypeChange($(this), $form);
         });
 
-        // Venue change in edit modal → reload matches, clear teams
+        // Match change → fill teams and times
+        $('body').on('change', '#edit_drs_match_id', function() {
+            var $opt = $(this).find('option:selected');
+            var $form = $(this).closest('form');
+            var date = $opt.data('date');
+            var gatesOpening = $opt.data('gates-opening');
+            var kickOff = $opt.data('kick-off');
+            var $sheetTypeSelect = $form.find('[name="sheet_type"]');
+            var sheetTypeCode = $sheetTypeSelect.find('option:selected').data('code');
+            
+            if (date) $form.find('[name="run_date"]').val(date);
+            
+            // Only populate gates opening and kick-off for MD sheet types
+            if (sheetTypeCode === 'MD') {
+                $form.find('[name="gates_opening"]').val(gatesOpening || '');
+                $form.find('[name="kick_off"]').val(kickOff || '');
+            }
+            
+            fillTeams($form, $opt.data('pma1'), $opt.data('pma2'));
+        });
+
+        // Venue change in edit modal → reload sheet types, clear matches
         $('#edit_drs_venue_id').on('change', function() {
-            fillTeams($('#edit_drs_form'), '', '');
-            loadDrsMatches($(this), $('#edit_drs_match_id'), null, $('#edit_drs_form'));
+            var $form = $('#edit_drs_form');
+            var $sheetTypeSelect = $('#edit_drs_sheet_type');
+            var $matchSelect = $('#edit_drs_match_id');
+            
+            // Load sheet types for this venue and clear dependent fields
+            loadSheetTypes($(this), $sheetTypeSelect);
+            clearMatchSelect($matchSelect, $form);
+            $sheetTypeSelect.val(''); // Clear sheet type selection
         });
 
         // ── Open edit modal ─────────────────────────────────────────────
@@ -1368,20 +1547,34 @@
                 dataType: 'json',
                 success: function(data) {
                     $('#edit_drs_id').val(data.id);
-                    $('#edit_drs_form [name="venue_id"]').val(data.venue_id);
-                    $('#edit_drs_form [name="sheet_type"]').val(data.sheet_type);
                     $('#edit_drs_form [name="run_date"]').val(data.run_date);
                     $('#edit_drs_form [name="gates_opening"]').val(data.gates_opening);
                     $('#edit_drs_form [name="kick_off"]').val(data.kick_off);
                     $('#edit_drs_form').removeClass('was-validated');
-                    // Load matches for the venue, pre-select the current match, fill teams
-                    loadDrsMatches(
-                        $('#edit_drs_venue_id'),
-                        $('#edit_drs_match_id'),
-                        data.match_id || null,
-                        $('#edit_drs_form')
-                    );
-                    $('#edit_drs_modal').modal('show');
+
+                    // Set functional area
+                    $('#edit_drs_functional_area_id').val(data.functional_area_id || '');
+
+                    // Set venue and load sheet types, then populate sheet_type value
+                    var $venueSelect = $('#edit_drs_venue_id');
+                    var $sheetTypeSelect = $('#edit_drs_sheet_type');
+                    var $matchSelect = $('#edit_drs_match_id');
+                    
+                    $venueSelect.val(data.venue_id);
+                    
+                    // Load sheet types for this venue
+                    loadSheetTypes($venueSelect, $sheetTypeSelect).done(function() {
+                        // After sheet types load, populate the sheet type value
+                        $sheetTypeSelect.val(data.sheet_type);
+                        var $option = $sheetTypeSelect.find('option:selected');
+                        var sheetTypeCode = $option.data('code');
+                        
+                        // Load and populate matches (for both MD and non-MD types)
+                        loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, data.match_id)
+                            .always(function() {
+                                $('#edit_drs_modal').modal('show');
+                            });
+                    });
                 },
                 error: function() {
                     toastr.error('Could not load run sheet data.');
