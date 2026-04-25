@@ -35,7 +35,7 @@ class FlatListExport implements FromView, ShouldAutoSize, WithTitle
             ->where('match_id', $this->matchId);
 
         if ($this->sheetType) {
-            $query->where('sheet_type', $this->sheetType);
+            $query->where('sheet_type_id', $this->sheetType);
         }
 
         $sheets = $query->get();

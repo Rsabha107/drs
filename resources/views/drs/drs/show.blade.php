@@ -134,11 +134,12 @@
                     data-bs-target="#add_item_modal">
                     <i class="fa-solid fa-plus me-1"></i>Add Item
                 </button>
-                <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal"
-                    data-bs-target="#copy_from_modal">
+                <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal" data-bs-target="#copy_from_modal">
                     <i class="fa-solid fa-copy me-1"></i>Copy from DRS
                 </button>
-                <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
+            @endif
+            @if (auth()->user()->hasRole('SuperAdminx'))
+            <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
                     <i class="fa-solid fa-pen me-1"></i>Edit Header
                 </button>
             @endif
@@ -319,13 +320,14 @@
                     <table id="items_table" data-toggle="table"
                         data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
                         data-row-style="itemRowStyle" data-loading-template="loadingTemplate"
-                        data-url="{{ route('drs.show.list', $isSheetTypeView ? $sheetTypeId : $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
-                        data-show-refresh="true" data-show-columns="true" data-show-toggle="true" data-total-field="total"
-                        data-height="500" data-show-fullscreen="true" data-fixed-scroll="true" data-data-field="rows"
-                        data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
-                        data-side-pagination="server" data-icon-size="sm" data-pagination="true"
-                        data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
-                        data-mobile-responsive="true" data-buttons-class="secondary" data-query-params="queryParams"
+                        data-url="{{ route('drs.show.list', $isSheetTypeView ? $sheetTypeId : $sheet->id) }}"
+                        data-icons-prefix="bx" data-icons="icons" data-show-refresh="true" data-show-columns="true"
+                        data-show-toggle="true" data-total-field="total" data-height="500" data-show-fullscreen="true"
+                        data-fixed-scroll="true" data-data-field="rows" data-page-list="[10, 20, 50, 100]"
+                        data-page-size="50" data-search="true" data-side-pagination="server" data-icon-size="sm"
+                        data-pagination="true" data-sort-name="start_time" data-sort-order="asc"
+                        data-trim-on-search="false" data-mobile-responsive="true" data-buttons-class="secondary"
+                        data-query-params="queryParams"
                         data-is-sheet-type-view="{{ $isSheetTypeView ?? false ? 'true' : 'false' }}">
                         <thead>
                             <tr>
@@ -419,26 +421,30 @@
                                 <label class="form-label">Description</label>
                                 <textarea name="description" class="form-control" rows="3" placeholder="Optional description"></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Row Color <span class="text-danger">*</span></label>
-                                <select name="row_color" class="form-select" id="add_row_color_select" required>
-                                    <option value="default" selected>Default (White)</option>
-                                    <option value="red">Red</option>
-                                    <option value="yellow">Yellow</option>
-                                    <option value="green">Green</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Sort Order</label>
-                                <input type="number" name="sort_order" class="form-control" min="0"
-                                    value="0">
-                            </div>
-                            <div class="col-12">
-                                <div id="add_color_preview" class="p-2 rounded border text-center fw-bold"
-                                    style="font-size:0.9rem;">
-                                    Color Preview
+                            @if (!auth()->user()->hasRole('Customer'))
+                                <div class="col-md-6">
+                                    <label class="form-label">Row Color <span class="text-danger">*</span></label>
+                                    <select name="row_color" class="form-select" id="add_row_color_select" required>
+                                        <option value="default" selected>Default (White)</option>
+                                        <option value="red">Red</option>
+                                        <option value="yellow">Yellow</option>
+                                        <option value="green">Green</option>
+                                    </select>
                                 </div>
-                            </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sort Order</label>
+                                    <input type="number" name="sort_order" class="form-control" min="0"
+                                        value="0">
+                                </div>
+                                <div class="col-12">
+                                    <div id="add_color_preview" class="p-2 rounded border text-center fw-bold"
+                                        style="font-size:0.9rem;">
+                                        Color Preview
+                                    </div>
+                                </div>
+                            @else
+                                <input type="hidden" name="row_color" value="default">
+                            @endif
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -513,26 +519,30 @@
                                 <label class="form-label">Description</label>
                                 <textarea name="description" id="edit_item_description" class="form-control" rows="3"></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Row Color <span class="text-danger">*</span></label>
-                                <select name="row_color" class="form-select" id="edit_row_color_select" required>
-                                    <option value="default">Default (White)</option>
-                                    <option value="red">Red</option>
-                                    <option value="yellow">Yellow</option>
-                                    <option value="green">Green</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Sort Order</label>
-                                <input type="number" name="sort_order" id="edit_item_sort_order" class="form-control"
-                                    min="0">
-                            </div>
-                            <div class="col-12">
-                                <div id="edit_color_preview" class="p-2 rounded border text-center fw-bold"
-                                    style="font-size:0.9rem;">
-                                    Color Preview
+                            @if (!auth()->user()->hasRole('Customer'))
+                                <div class="col-md-6">
+                                    <label class="form-label">Row Color <span class="text-danger">*</span></label>
+                                    <select name="row_color" class="form-select" id="edit_row_color_select" required>
+                                        <option value="default">Default (White)</option>
+                                        <option value="red">Red</option>
+                                        <option value="yellow">Yellow</option>
+                                        <option value="green">Green</option>
+                                    </select>
                                 </div>
-                            </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sort Order</label>
+                                    <input type="number" name="sort_order" id="edit_item_sort_order"
+                                        class="form-control" min="0">
+                                </div>
+                                <div class="col-12">
+                                    <div id="edit_color_preview" class="p-2 rounded border text-center fw-bold"
+                                        style="font-size:0.9rem;">
+                                        Color Preview
+                                    </div>
+                                </div>
+                            @else
+                                <input type="hidden" name="row_color" id="edit_row_color_hidden">
+                            @endif
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1017,6 +1027,7 @@
                     $('#edit_item_location').val(data.location);
                     $('#edit_item_description').val(data.description);
                     $('#edit_row_color_select').val(data.row_color);
+                    $('#edit_row_color_hidden').val(data.row_color);
                     $('#edit_item_sort_order').val(data.sort_order);
                     $('#edit_item_form').removeClass('was-validated');
                     updateEditItemPreview();
@@ -1261,7 +1272,7 @@
                 },
                 complete: function() {
                     $btn.html('<i class="fa-solid fa-copy me-1"></i>Copy Items').prop('disabled',
-                    false);
+                        false);
                 }
             });
         });
@@ -1341,29 +1352,36 @@
             }
 
             $.ajax({
-                url: '{{ route("drs.drs.get-sheet-types") }}',
+                url: '{{ route('drs.drs.get-sheet-types') }}',
                 type: 'GET',
                 dataType: 'json',
-                data: { venue_id: venueId },
-                headers: { "X-CSRF-TOKEN": $('input[name="_token"]').val() },
+                data: {
+                    venue_id: venueId
+                },
+                headers: {
+                    "X-CSRF-TOKEN": $('input[name="_token"]').val()
+                },
                 success: function(response) {
                     $sheetTypeSelect.empty();
-                    
+
                     if (response.types && response.types.length > 0) {
                         $sheetTypeSelect.append('<option value="">Select type</option>');
                         $.each(response.types, function(i, type) {
                             $sheetTypeSelect.append(
-                                '<option value="' + type.id + '" data-code="' + type.code + '" data-title="' + type.title + '">' + type.title + '</option>'
+                                '<option value="' + type.id + '" data-code="' + type.code +
+                                '" data-title="' + type.title + '">' + type.title + '</option>'
                             );
                         });
                         $sheetTypeSelect.prop('disabled', false);
                     } else {
-                        $sheetTypeSelect.append('<option value="">No types available</option>').prop('disabled', true);
+                        $sheetTypeSelect.append('<option value="">No types available</option>').prop('disabled',
+                            true);
                     }
                     dfd.resolve();
                 },
                 error: function() {
-                    $sheetTypeSelect.empty().append('<option value="">— could not load types —</option>').prop('disabled', true);
+                    $sheetTypeSelect.empty().append('<option value="">— could not load types —</option>').prop(
+                        'disabled', true);
                     dfd.reject();
                 }
             });
@@ -1392,9 +1410,13 @@
                 url: '/drs/sheet-type/matches',
                 type: 'GET',
                 dataType: 'json',
-                data: { sheet_type_id: sheetTypeId, venue_id: venueId },
+                data: {
+                    sheet_type_id: sheetTypeId,
+                    venue_id: venueId
+                },
                 success: function(matches) {
-                    populateMatchSelect($matchSelect, $form, matches, selectedMatchId, null, $sheetTypeSelect.find('option:selected').data('code'));
+                    populateMatchSelect($matchSelect, $form, matches, selectedMatchId, null, $sheetTypeSelect
+                        .find('option:selected').data('code'));
                     dfd.resolve();
                 },
                 error: function() {
@@ -1433,7 +1455,7 @@
                 var date = $selected.data('date');
                 if (date) $form.find('[name="run_date"]').val(date);
                 fillTeams($form, $selected.data('pma1'), $selected.data('pma2'));
-                
+
                 // Fill gates opening and kickoff only for MD sheet types
                 if (sheetTypeCode === 'MD') {
                     var gatesOpening = $selected.data('gates-opening');
@@ -1512,15 +1534,15 @@
             var kickOff = $opt.data('kick-off');
             var $sheetTypeSelect = $form.find('[name="sheet_type"]');
             var sheetTypeCode = $sheetTypeSelect.find('option:selected').data('code');
-            
+
             if (date) $form.find('[name="run_date"]').val(date);
-            
+
             // Only populate gates opening and kick-off for MD sheet types
             if (sheetTypeCode === 'MD') {
                 $form.find('[name="gates_opening"]').val(gatesOpening || '');
                 $form.find('[name="kick_off"]').val(kickOff || '');
             }
-            
+
             fillTeams($form, $opt.data('pma1'), $opt.data('pma2'));
         });
 
@@ -1529,7 +1551,7 @@
             var $form = $('#edit_drs_form');
             var $sheetTypeSelect = $('#edit_drs_sheet_type');
             var $matchSelect = $('#edit_drs_match_id');
-            
+
             // Load sheet types for this venue and clear dependent fields
             loadSheetTypes($(this), $sheetTypeSelect);
             clearMatchSelect($matchSelect, $form);
@@ -1561,18 +1583,19 @@
                     var $venueSelect = $('#edit_drs_venue_id');
                     var $sheetTypeSelect = $('#edit_drs_sheet_type');
                     var $matchSelect = $('#edit_drs_match_id');
-                    
+
                     $venueSelect.val(data.venue_id);
-                    
+
                     // Load sheet types for this venue
                     loadSheetTypes($venueSelect, $sheetTypeSelect).done(function() {
                         // After sheet types load, populate the sheet type value
                         $sheetTypeSelect.val(data.sheet_type);
                         var $option = $sheetTypeSelect.find('option:selected');
                         var sheetTypeCode = $option.data('code');
-                        
+
                         // Load and populate matches (for both MD and non-MD types)
-                        loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, data.match_id)
+                        loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect,
+                                data.match_id)
                             .always(function() {
                                 $('#edit_drs_modal').modal('show');
                             });

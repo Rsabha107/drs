@@ -253,7 +253,7 @@ class DailyRunSheetController extends Controller
             $sheetTypeId = null;
         }
 
-        Log::info('Viewing Daily Run Sheet', ['sheet_id' => $id, 'is_sheet_type_view' => $isSheetTypeView]);
+        // Log::info('Viewing Daily Run Sheet', ['sheet_id' => $id, 'is_sheet_type_view' => $isSheetTypeView]);
         
         /** @var \App\Models\User $user */
         $user = Auth::user();
@@ -261,7 +261,7 @@ class DailyRunSheetController extends Controller
         if ($user->hasRole('Customer')) {
             // Customers can view any sheet, but can only add/edit items on sheets from their own FA
             $userFaIds = $user->fa()->pluck('functional_areas.id');
-            Log::info('Customer FA IDs', ['user_id' => $user->id, 'fa_ids' => $userFaIds->toArray()]);
+            // Log::info('Customer FA IDs', ['user_id' => $user->id, 'fa_ids' => $userFaIds->toArray()]);
             $canEdit = $userFaIds->contains($sheet->functional_area_id);
         } else {
             $canEdit = $user->hasRole('SuperAdmin');
@@ -295,14 +295,22 @@ class DailyRunSheetController extends Controller
                 ->where('event_id', $eventId)
                 ->firstOrFail();
 
-            // Show items from all sibling sheets (same event/venue/match/type)
-            // so customers can see all FA items, but can_edit controls who may act
-            $sheetIds = DailyRunSheet::where('event_id', $eventId)
-                ->where('venue_id', $sheet->venue_id)
-                ->where('sheet_type_id', $sheet->sheet_type_id)
-                ->when($sheet->match_id, fn($q) => $q->where('match_id', $sheet->match_id))
-                ->pluck('id')
-                ->toArray();
+            /** @var \App\Models\User $authUser */
+            $authUser = Auth::user();
+
+            if ($authUser->hasRole('Customer')) {
+                // Customers see all sibling sheets (same event/venue/match/type)
+                // can_edit controls who may action each item
+                $sheetIds = DailyRunSheet::where('event_id', $eventId)
+                    ->where('venue_id', $sheet->venue_id)
+                    ->where('sheet_type_id', $sheet->sheet_type_id)
+                    ->when($sheet->match_id, fn($q) => $q->where('match_id', $sheet->match_id))
+                    ->pluck('id')
+                    ->toArray();
+            } else {
+                // Admins see only the specific sheet
+                $sheetIds = [$id];
+            }
         }
 
         /** @var \App\Models\User $authUser */
@@ -482,9 +490,16 @@ class DailyRunSheetController extends Controller
         $sheet   = DailyRunSheet::findOrFail($id);
         $eventId = $sheet->event_id;
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $sheets = DailyRunSheet::with(['venue', 'functionalArea', 'sheetType'])
             ->where('event_id', $eventId)
             ->where('id', '!=', $id)
+            ->when($user->hasRole('Customer'), function ($q) use ($user) {
+                $faIds = $user->fa()->pluck('functional_areas.id');
+                $q->whereIn('functional_area_id', $faIds);
+            })
             ->orderBy('sheet_type_id')
             ->get()
             ->map(fn($s) => [
@@ -508,9 +523,16 @@ class DailyRunSheetController extends Controller
         $target = DailyRunSheet::findOrFail($id);
         $source = DailyRunSheet::with('items')->findOrFail($request->source_id);
 
-        $faLabel = $target->functionalArea
-            ? $target->functionalArea->fa_code . ' — ' . $target->functionalArea->title
-            : null;
+
+        // Log::info('Copying items from Daily Run Sheet', ['source_id' => $source->id, 'target_id' => $target->id, 'item_count' => $source->items->count()]);
+        // Log::debug('Source sheet details', ['source' => $source->toArray()]);
+
+        // $faLabel = $target->functionalArea
+        //     ? $target->functionalArea->fa_code . ' — ' . $target->functionalArea->title
+        //     : null;
+
+        // Log::debug('Functional area label for copied items', ['fa_label' => $faLabel]);
+        // Log::debug('First item before mapping', ['first_item' => $source->items->first() ? $source->items->first()->toArray() : null]);
 
         $now  = now();
         $rows = $source->items->map(fn($item) => [
@@ -519,7 +541,7 @@ class DailyRunSheetController extends Controller
             'start_time'      => $item->start_time,
             'end_time'        => $item->end_time,
             'countdown_to_ko' => $item->countdown_to_ko,
-            'functional_area' => $faLabel ?? $item->functional_area,
+            'functional_area' => $item->functional_area,
             'location'        => $item->location,
             'description'     => $item->description,
             'row_color'       => $item->row_color,
@@ -527,6 +549,8 @@ class DailyRunSheetController extends Controller
             'created_at'      => $now,
             'updated_at'      => $now,
         ])->toArray();
+
+        // Log::debug('Mapped items ready for insertion', ['rows' => $rows]);
 
         DailyRunSheetItem::insert($rows);
 

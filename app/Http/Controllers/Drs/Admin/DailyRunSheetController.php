@@ -101,14 +101,16 @@ class DailyRunSheetController extends Controller
             $q->where('event_id', $eventId);
         })->orderBy('short_name')->get();
 
-        // Sheet types available for the selected venue
+        // Sheet types available for the selected venue (via sheet_type_id FK)
         $sheetTypes = collect();
         if ($venueId) {
-            $sheetTypes = DailyRunSheet::where('event_id', $eventId)
+            $sheetTypeIds = DailyRunSheet::where('event_id', $eventId)
                 ->where('venue_id', $venueId)
-                ->orderBy('sheet_type')
-                ->pluck('sheet_type')
-                ->filter()->unique()->values();
+                ->whereNotNull('sheet_type_id')
+                ->pluck('sheet_type_id')
+                ->unique()
+                ->values();
+            $sheetTypes = SheetType::whereIn('id', $sheetTypeIds)->orderBy('sort_order')->get();
         }
 
         // Matches that have a sheet of the selected type for this venue (match is optional)
@@ -116,7 +118,7 @@ class DailyRunSheetController extends Controller
         if ($venueId && $sheetType) {
             $matchIds = DailyRunSheet::where('event_id', $eventId)
                 ->where('venue_id', $venueId)
-                ->where('sheet_type', $sheetType)
+                ->where('sheet_type_id', $sheetType)
                 ->whereNotNull('match_id')
                 ->pluck('match_id');
 
@@ -129,10 +131,10 @@ class DailyRunSheetController extends Controller
         $matchHeader = null;
 
         if ($venueId && $sheetType) {
-            $sheets = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'items'])
+            $sheets = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'sheetType', 'items'])
                 ->where('event_id', $eventId)
                 ->where('venue_id', $venueId)
-                ->where('sheet_type', $sheetType)
+                ->where('sheet_type_id', $sheetType)
                 ->when($matchId, fn($q) => $q->where('match_id', $matchId))
                 ->get();
 
@@ -163,7 +165,7 @@ class DailyRunSheetController extends Controller
         if ($request->input('list') === 'matches' && $venueId && $sheetType) {
             $matchIds = DailyRunSheet::where('event_id', $eventId)
                 ->where('venue_id', $venueId)
-                ->where('sheet_type', $sheetType)
+                ->where('sheet_type_id', $sheetType)
                 ->whereNotNull('match_id')
                 ->pluck('match_id');
 
@@ -175,14 +177,18 @@ class DailyRunSheetController extends Controller
         }
 
         // Default: return sheet types for the given venue (and optional match)
-        $types = DailyRunSheet::where('event_id', $eventId)
+        $sheetTypeIds = DailyRunSheet::where('event_id', $eventId)
             ->when($venueId, fn($q) => $q->where('venue_id', $venueId))
             ->when($matchId, fn($q) => $q->where('match_id', $matchId))
-            ->orderBy('sheet_type')
-            ->pluck('sheet_type')
-            ->filter()
+            ->whereNotNull('sheet_type_id')
+            ->pluck('sheet_type_id')
             ->unique()
             ->values();
+
+        $types = SheetType::whereIn('id', $sheetTypeIds)
+            ->orderBy('sort_order')
+            ->get(['id', 'code'])
+            ->map(fn($t) => ['id' => $t->id, 'code' => $t->code]);
 
         return response()->json($types);
     }
@@ -209,7 +215,7 @@ class DailyRunSheetController extends Controller
         $sheetIds = DailyRunSheet::where('event_id', $eventId)
             ->when($venueId, fn($q) => $q->where('venue_id', $venueId))
             ->when($matchId, fn($q) => $q->where('match_id', $matchId))
-            ->when($sheetType, fn($q) => $q->where('sheet_type', $sheetType))
+            ->when($sheetType, fn($q) => $q->where('sheet_type_id', $sheetType))
             ->pluck('id');
 
         // Get the KO time from the first matching sheet

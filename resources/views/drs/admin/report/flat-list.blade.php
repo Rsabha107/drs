@@ -129,8 +129,8 @@
                             {{ !$venueId ? 'disabled' : '' }}>
                             <option value="">— Select Sheet Type —</option>
                             @foreach ($sheetTypes ?? [] as $st)
-                                <option value="{{ $st }}" {{ ($sheetType ?? '') == $st ? 'selected' : '' }}>
-                                    {{ $st }}
+                                <option value="{{ $st->id }}" {{ ($sheetType ?? '') == $st->id ? 'selected' : '' }}>
+                                    {{ $st->code }}
                                 </option>
                             @endforeach
                         </select>
@@ -191,8 +191,8 @@
                         <tr class="sheet-title-row">
                             <td colspan="4">
                                 Daily Run Sheet
-                                @if ($matchHeader?->sheet_type)
-                                    ({{ $matchHeader->sheet_type }})
+                                @if ($matchHeader?->sheetType?->code)
+                                    ({{ $matchHeader->sheetType->code }})
                                 @endif
                             </td>
                         </tr>
@@ -278,7 +278,7 @@
                                         @foreach ($sheets as $s)
                                             <option value="{{ $s->id }}">
                                                 {{ $s->functionalArea?->title ?? ($s->functionalArea?->name ?? 'Sheet #' . $s->id) }}
-                                                ({{ $s->sheet_type }})
+                                                ({{ $s->sheetType?->code ?? 'Sheet #' . $s->id }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -472,8 +472,8 @@
                     stSelect.innerHTML = '<option value="">— Select Sheet Type —</option>';
                     types.forEach(function(t) {
                         var opt = document.createElement('option');
-                        opt.value = t;
-                        opt.textContent = t;
+                        opt.value = t.id;
+                        opt.textContent = t.code;
                         stSelect.appendChild(opt);
                     });
                     stSelect.disabled = types.length === 0;

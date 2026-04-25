@@ -20,6 +20,10 @@ class EventImageController extends Controller
         $doc = EventDocument::where('event_id', $id)
             ->first();
 
+        if (!$doc) {
+            abort(404);
+        }
+
         $path = $doc->path;
         // Log::info('EventImageController::getPrivateFile document path: ' . $path);
 
