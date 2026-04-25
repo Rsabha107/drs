@@ -46,7 +46,7 @@ class IssueLogExport implements FromView, ShouldAutoSize, WithTitle
             'half_time' => $report->match_half_time ? Carbon::parse($report->match_half_time)->format('H:i') : '19:53',
         ];
 
-        return view('vms.shared.exports.issue-log', [
+        return view('drs.shared.exports.issue-log', [
             'meta' => $meta,
             'issues' => $issues,
         ]);

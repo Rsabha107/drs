@@ -111,10 +111,10 @@ class AuthenticatedSessionController extends Controller
         // appLog($request->user()->role);
         $url = '';
         if ($request->user()->is_admin) {
-            $url = 'vms/report';
+            $url = 'drs/report';
             return redirect()->intended($url);
         } else {
-            $url = 'vms/report';
+            $url = 'drs/report';
             return redirect()->intended($url);
         }
 

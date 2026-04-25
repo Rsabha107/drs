@@ -17,7 +17,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Drs\Setting\VenueController;
 use App\Http\Controllers\Drs\Setting\FunctionalAreaController;
 use App\Http\Controllers\UtilController;
-use App\Http\Controllers\Drs\Auth\AdminController as VmsAuthAdminController;
+use App\Http\Controllers\Drs\Auth\AdminController as DrsAuthAdminController;
 use App\Http\Controllers\Drs\Admin\DashboardController;
 use App\Http\Controllers\Drs\Admin\ImportExportController;
 use App\Http\Controllers\Drs\Admin\VenueMatchReportController as AdminVenueMatchReportController;
@@ -43,27 +43,6 @@ use Illuminate\Support\Facades\Storage;
 |
 */
 
-// Route::get('/', function () {
-//     if (auth()->check()) {
-//         if (auth()->user()->is_admin) {
-//             return redirect()->route('vapp.admin');
-//         } elseif (auth()->user()->hasRole('Customer')) {
-//             appLog('Redirecting to vapp.customer');
-//             return redirect()->route('vapp.customer');
-//         }
-//     } else {
-//         return redirect()->route('login');
-//     }
-// })->name('home');
-
-// Route::get('/debug', function () {
-//     return [
-//         'scheme' => request()->getScheme(),
-//         'host'   => request()->getHost(),
-//         'url'    => request()->fullUrl(),
-//         'headers'=> request()->headers->all(),
-//     ];
-// });
 
 Route::get('/', function () {
     appLog('In home route');
@@ -109,7 +88,7 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::post('/drs/admin/report/export', 'export')->name('drs.admin.report.export');
     });
 
-    //VMS
+    //DRS
     Route::controller(AdminVenueMatchReportController::class)->group(function () {
         Route::get('/drs/admin/report', 'index')->name('drs.admin.report');
         Route::get('/drs/admin/report/list', 'list')->name('drs.admin.report.list');
@@ -156,7 +135,7 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::post('/drs/setting/event/store', 'store')->name('drs.setting.event.store');
     });
 
-    Route::get('/auth/ms-signup', [VmsAuthAdminController::class, 'msSignUp'])->name('auth.ms.signup');
+    Route::get('/auth/ms-signup', [DrsAuthAdminController::class, 'msSignUp'])->name('auth.ms.signup');
     Route::post('/signup/ms/store', [UserController::class, 'msStore'])->name('admin.signup.ms.store');
 
     Route::controller(AdminUserController::class)->group(function () {
@@ -296,25 +275,25 @@ Route::get('/drs/customer/report/pick', function () {
 })->name('drs.customer.report.pick')->middleware('role:Customer');
 Route::post('/drs/customer/events/switch', [SharedDailyRunSheetController::class, 'pickEvent'])->name('drs.customer.report.event.switch')->middleware('role:Customer');
 
-Route::get('/drs/logout', [VmsAuthAdminController::class, 'logout'])->name('drs.logout');
+Route::get('/drs/logout', [DrsAuthAdminController::class, 'logout'])->name('drs.logout');
 
 
 // ****************** ADMIN *********************
 Route::group(['middleware' => 'prevent-back-history'], function () {
 
     // Add User
-    Route::get('/drs/auth/signup', [VmsAuthAdminController::class, 'signUp'])->name('auth.signup')->middleware('signed');
+    Route::get('/drs/auth/signup', [DrsAuthAdminController::class, 'signUp'])->name('auth.signup')->middleware('signed');
     Route::post('/signup/store', [UserController::class, 'store'])->name('admin.signup.store');
 
     // Add User
-    Route::get('/register/{event_id}', [VmsAuthAdminController::class, 'register'])->name('auth.register');
-    Route::post('/register/store', [VmsAuthAdminController::class, 'storeRegister'])->name('admin.register.store');
+    Route::get('/register/{event_id}', [DrsAuthAdminController::class, 'register'])->name('auth.register');
+    Route::post('/register/store', [DrsAuthAdminController::class, 'storeRegister'])->name('admin.register.store');
 
     Route::middleware(['auth', 'prevent-back-history'])->group(function () {
 
-        Route::get('auth/otp', [VmsAuthAdminController::class, 'showOtp'])->name('otp.get');
-        Route::post('verify-otp', [VmsAuthAdminController::class, 'verifyOtpAndLogin'])->name('auth.otp.post');
-        Route::get('auth/resend', [VmsAuthAdminController::class, 'resendOTP'])->name('otp.resend.get');
+        Route::get('auth/otp', [DrsAuthAdminController::class, 'showOtp'])->name('otp.get');
+        Route::post('verify-otp', [DrsAuthAdminController::class, 'verifyOtpAndLogin'])->name('auth.otp.post');
+        Route::get('auth/resend', [DrsAuthAdminController::class, 'resendOTP'])->name('otp.resend.get');
 
         //used to show images in private folder
         Route::get('/doc/{file}', [UtilController::class, 'showImage'])->name('a');
@@ -328,7 +307,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         /*************************************** End Play ground */
 
 
-        Route::get('/drs/logout', [VmsAuthAdminController::class, 'logout'])->name('drs.logout');
+        Route::get('/drs/logout', [DrsAuthAdminController::class, 'logout'])->name('drs.logout');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
     });
 

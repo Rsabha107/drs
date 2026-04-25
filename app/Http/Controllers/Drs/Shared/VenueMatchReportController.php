@@ -166,7 +166,7 @@ class VenueMatchReportController extends Controller
             DB::beginTransaction();
             try {
 
-                $seq = nextSequence('vms');
+                $seq = nextSequence('drs');
                 $user = Auth::user();
                 $op = new VenueMatchReport();
                 // draft vs publish

@@ -28,7 +28,7 @@ class NewReportMail extends Mailable implements ShouldQueue
         return $this->subject('VMS Report Confirmation'.' - ' .$this->details['event'] . ' | ' . $this->details['venue']. ' | ' . $this->details['report_date'])
             ->view('emails.new_report_creation')
             // ->from('mds@scqa0.onmicrosoft.com', 'VMS')
-            ->attach(storage_path('app/private/vms/pdf-exports/' . $this->details['filename']), [
+            ->attach(storage_path('app/private/drs/pdf-exports/' . $this->details['filename']), [
                 // 'as' => 'booking_confirmation.pdf',
                 'mime' => 'application/pdf',
             ])
