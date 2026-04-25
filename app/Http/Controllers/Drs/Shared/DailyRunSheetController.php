@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use FontLib\Table\Type\loca;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Intervention\Image\Colors\Rgb\Channels\Red;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -69,7 +70,7 @@ class DailyRunSheetController extends Controller
 
         if ($user->hasRole('Customer')) {
             // Customer sees only their own FA's sheets
-            $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
+            $query = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'sheetType'])
                 ->where('event_id', $eventId)
                 ->whereHas('functionalArea', function ($q) use ($user) {
                     $q->whereIn('id', $user->fa->pluck('id'));
@@ -123,6 +124,7 @@ class DailyRunSheetController extends Controller
 
             return [
                 'id'               => $s->id,
+                'sheet_type_id'    => $s->sheet_type_id,
                 'sheet_type'       => '<span class="badge bg-primary">' . e($mdDate . ' - ' . $sheetTypeCode) . '</span>',
                 'venue'            => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
                 'match'            => '<span class="fs-9">' . e($s->match ? $s->match->match_number : '-') . '</span>',
@@ -229,32 +231,79 @@ class DailyRunSheetController extends Controller
 
     public function show($id)
     {
-        $sheet = DailyRunSheet::with(['event', 'venue', 'match', 'functionalArea', 'items'])
-            ->findOrFail($id);
+        $eventId = session()->get('EVENT_ID');
+        
+        // Try to find a sheet by ID first, otherwise treat it as sheet_type_id
+        $sheet = DailyRunSheet::where('event_id', $eventId)
+            ->with(['event', 'venue', 'match', 'functionalArea', 'items'])
+            ->find($id);
 
+            // dd($sheet);
+
+        if (!$sheet) {
+            // If not found by ID, assume it's a sheet_type_id and get the first sheet with that type
+            $sheet = DailyRunSheet::where('event_id', $eventId)
+                ->where('sheet_type_id', $id)
+                ->with(['event', 'venue', 'match', 'functionalArea', 'items'])
+                ->firstOrFail();
+            $isSheetTypeView = true;
+            $sheetTypeId = $id;
+        } else {
+            $isSheetTypeView = false;
+            $sheetTypeId = null;
+        }
+
+        Log::info('Viewing Daily Run Sheet', ['sheet_id' => $id, 'is_sheet_type_view' => $isSheetTypeView]);
+        
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if ($user->hasRole('Customer')) {
-            // Customer may only open a sheet that belongs to their own FA
+            // Customers can view any sheet, but can only add/edit items on sheets from their own FA
             $userFaIds = $user->fa()->pluck('functional_areas.id');
-            abort_unless($userFaIds->contains($sheet->functional_area_id), 403);
-            $canEdit = true; // it's their sheet — they can add items and action their own rows
+            Log::info('Customer FA IDs', ['user_id' => $user->id, 'fa_ids' => $userFaIds->toArray()]);
+            $canEdit = $userFaIds->contains($sheet->functional_area_id);
         } else {
             $canEdit = $user->hasRole('SuperAdmin');
         }
 
-        return view('drs.drs.show', compact('sheet', 'canEdit'));
+        return view('drs.drs.show', compact('sheet', 'canEdit', 'sheetTypeId', 'isSheetTypeView'));
     }
 
     public function showList(Request $request, $id)
     {
         $eventId = session()->get('EVENT_ID');
 
-        // Verify the run sheet belongs to the current event
-        $sheet = DailyRunSheet::where('id', $id)
-            ->where('event_id', $eventId)
-            ->firstOrFail();
+        // Check if we're viewing by sheet_type_id or regular sheet_id
+        $isSheetTypeView = $request->input('is_sheet_type_view') === 'true';
+        
+        if ($isSheetTypeView) {
+            // Get all sheets with this sheet_type_id
+            $sheetIds = DailyRunSheet::where('event_id', $eventId)
+                ->where('sheet_type_id', $id)
+                ->pluck('id')
+                ->toArray();
+            
+            if (empty($sheetIds)) {
+                return response()->json([
+                    'total' => 0,
+                    'rows'  => [],
+                ]);
+            }
+        } else {
+            $sheet = DailyRunSheet::where('id', $id)
+                ->where('event_id', $eventId)
+                ->firstOrFail();
+
+            // Show items from all sibling sheets (same event/venue/match/type)
+            // so customers can see all FA items, but can_edit controls who may act
+            $sheetIds = DailyRunSheet::where('event_id', $eventId)
+                ->where('venue_id', $sheet->venue_id)
+                ->where('sheet_type_id', $sheet->sheet_type_id)
+                ->when($sheet->match_id, fn($q) => $q->where('match_id', $sheet->match_id))
+                ->pluck('id')
+                ->toArray();
+        }
 
         /** @var \App\Models\User $authUser */
         $authUser  = Auth::user();
@@ -271,9 +320,9 @@ class DailyRunSheetController extends Controller
             $sort = 'start_time';
         }
 
-        // Show only items from this specific sheet
+        // Show items from all sheets in sheetIds
         $query = DailyRunSheetItem::with('runSheet.functionalArea')
-            ->where('run_sheet_id', $id);
+            ->whereIn('run_sheet_id', $sheetIds);
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -312,11 +361,7 @@ class DailyRunSheetController extends Controller
             ];
         };
 
-        // if ($fetchAll) {
-        //     $rows = $query->get()->map($transform);
-        // } else {
-            $rows = $query->paginate($limit)->through($transform);
-        // }
+        $rows = $query->paginate($limit)->through($transform);
 
         return response()->json([
             'total' => $total,

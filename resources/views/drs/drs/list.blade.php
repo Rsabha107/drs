@@ -221,6 +221,7 @@
                 );
             } else {
                 // Customer: Add Items button
+                console.log('row:', row); // Debug log to check row data
                 actions.push(
                     '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-primary" title="Add Items">',
                     '<i class="fa-solid fa-plus me-1"></i>Add Items',

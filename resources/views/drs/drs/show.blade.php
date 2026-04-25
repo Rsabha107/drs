@@ -319,13 +319,14 @@
                     <table id="items_table" data-toggle="table"
                         data-classes="table table-hover fs-9 mb-0 border-top border-translucent run-sheet-table"
                         data-row-style="itemRowStyle" data-loading-template="loadingTemplate"
-                        data-url="{{ route('drs.show.list', $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
+                        data-url="{{ route('drs.show.list', $isSheetTypeView ? $sheetTypeId : $sheet->id) }}" data-icons-prefix="bx" data-icons="icons"
                         data-show-refresh="true" data-show-columns="true" data-show-toggle="true" data-total-field="total"
                         data-height="500" data-show-fullscreen="true" data-fixed-scroll="true" data-data-field="rows"
                         data-page-list="[10, 20, 50, 100]" data-page-size="50" data-search="true"
                         data-side-pagination="server" data-icon-size="sm" data-pagination="true"
                         data-sort-name="start_time" data-sort-order="asc" data-trim-on-search="false"
-                        data-mobile-responsive="true" data-buttons-class="secondary" data-query-params="queryParams">
+                        data-mobile-responsive="true" data-buttons-class="secondary" data-query-params="queryParams"
+                        data-is-sheet-type-view="{{ $isSheetTypeView ?? false ? 'true' : 'false' }}">
                         <thead>
                             <tr>
                                 <th data-field="id" data-sortable="true" data-visible="false">ID</th>
@@ -620,6 +621,7 @@
                 venue_id: $('#filter_venue').val(),
                 sheet_type: $('#filter_type').val(),
                 functional_area_id: $('#filter_functional_area').val(),
+                is_sheet_type_view: $('#items_table').data('is-sheet-type-view') || 'false',
             };
         }
 
