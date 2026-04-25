@@ -76,7 +76,7 @@ class DailyRunSheetController extends Controller
                 });
         } elseif ($user->hasRole('SuperAdmin')) {
             // SuperAdmin sees all sheets for the event
-            $query = DailyRunSheet::with(['venue', 'match', 'functionalArea'])
+            $query = DailyRunSheet::with(['venue', 'match', 'functionalArea', 'sheetType'])
                 ->where('event_id', $eventId);
         } else {
             // default to no sheets
@@ -88,7 +88,7 @@ class DailyRunSheetController extends Controller
             $query->where('venue_id', $request->venue_id);
         }
         if ($request->filled('sheet_type')) {
-            $query->where('sheet_type', $request->sheet_type);
+            $query->where('sheet_type_id', $request->sheet_type);
         }
         if ($request->filled('functional_area_id')) {
             $query->where('functional_area_id', $request->functional_area_id);
@@ -96,7 +96,7 @@ class DailyRunSheetController extends Controller
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('sheet_type', 'like', "%{$s}%")
+                $q->whereHas('sheetType', fn($q2) => $q2->where('code', 'like', "%{$s}%")->orWhere('title', 'like', "%{$s}%"))
                     ->orWhere('run_date', 'like', "%{$s}%")
                     ->orWhereHas('venue', fn($q2) => $q2->where('short_name', 'like', "%{$s}%"));
             });
@@ -104,14 +104,33 @@ class DailyRunSheetController extends Controller
 
         $total = $query->count();
         $rows  = $query->orderBy($sort, $order)->paginate($limit)->through(function ($s) {
+            // Calculate MD-x date based on sheet_type code and match_date
+            $mdDate = '-';
+            $sheetTypeCode = $s->sheetType?->code ?? 'N/A';
+            if ($s->match && $s->match->match_date) {
+                // Extract the number from sheet type (MD-3, MD-2, MD-1, MD)
+                $daysOffset = 0;
+                if (preg_match('/MD-?(\d+)/', $sheetTypeCode, $matches)) {
+                    $daysOffset = (int)$matches[1];
+                    // For MD-3, MD-2, MD-1: subtract days from match date
+                    $calcDate = \Carbon\Carbon::parse($s->match->match_date)->subDays($daysOffset);
+                    $mdDate = $calcDate->format('d/m/Y');
+                } elseif ($sheetTypeCode === 'MD') {
+                    // MD is the match date itself
+                    $mdDate = \Carbon\Carbon::parse($s->match->match_date)->format('d/m/Y');
+                }
+            }
+
             return [
                 'id'               => $s->id,
-                'sheet_type'       => '<span class="badge bg-primary">' . e($s->run_date_dmy . ' ' . $s->sheet_type) . '</span>',
+                'sheet_type'       => '<span class="badge bg-primary">' . e($s->run_date_dmy . ' ' . $sheetTypeCode) . '</span>',
                 'venue'            => '<span class="fs-9">' . e($s->venue?->short_name ?? '-') . '</span>',
                 'match'            => '<span class="fs-9">' . e($s->match ? $s->match->match_number : '-') . '</span>',
                 'teams'            => '<span class="fs-9">' . e($s->match ? $s->match->pma1 . ' vs ' . $s->match->pma2 : '-') . '</span>',
                 'functional_area'  => '<span class="fs-9">' . e($s->functionalArea?->title ?? '-') . '</span>',
                 'run_date'         => '<span class="fs-9">' . e($s->run_date_dmy) . '</span>',
+                'match_date'       => '<span class="fs-9">' . e($s->match && $s->match->match_date ? \Carbon\Carbon::parse($s->match->match_date)->format('d/m/Y') : '-') . '</span>',
+                'md_date'          => '<span class="fs-9">' . $mdDate . '</span>',
                 'gates_opening'    => '<span class="fs-9">' . ($s->gates_opening ? \Carbon\Carbon::parse($s->gates_opening)->format('H:i') : '-') . '</span>',
                 'kick_off'         => '<span class="fs-9">' . ($s->kick_off ? \Carbon\Carbon::parse($s->kick_off)->format('H:i') : '-') . '</span>',
                 'items_count'      => '<span class="badge bg-secondary">' . $s->items()->count() . '</span>',
@@ -137,7 +156,7 @@ class DailyRunSheetController extends Controller
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'venue_id'           => 'required|integer',
-            'sheet_type'         => 'required|string|max:50',
+            'sheet_type'         => 'required|integer|exists:sheet_types,id',
             'run_date'           => 'required|date',
             // 'gates_opening'      => 'nullable|date_format:H:i',
             // 'kick_off'           => 'nullable|date_format:H:i',
@@ -164,15 +183,20 @@ class DailyRunSheetController extends Controller
         $eventId          = session()->get('EVENT_ID');
         $matchId          = $request->match_id ?: null;
         $functionalAreaId = $request->functional_area_id ?: null;
+        $sheetTypeId      = $request->sheet_type;
+
+        // Load the sheet type to check if it's MD
+        $sheetType = SheetType::findOrFail($sheetTypeId);
 
         // MD with no FA: auto-create three sheets (CMP, SSI, VUM)
-        if ($request->sheet_type === 'MD' && !$functionalAreaId) {
-            return $this->createMdTriple($request, $eventId, $matchId);
+        if ($sheetType->code === 'MD' && !$functionalAreaId) {
+            return $this->createMdTriple($request, $eventId, $matchId, $sheetTypeId);
         }
+
 
         $duplicate = DailyRunSheet::where('event_id', $eventId)
             ->where('venue_id', $request->venue_id)
-            ->where('sheet_type', $request->sheet_type)
+            ->where('sheet_type_id', $sheetTypeId)
             ->where('match_id', $matchId)
             ->where('functional_area_id', $functionalAreaId)
             ->exists();
@@ -189,7 +213,7 @@ class DailyRunSheetController extends Controller
             'venue_id'           => $request->venue_id,
             'match_id'           => $matchId,
             'functional_area_id' => $functionalAreaId,
-            'sheet_type'         => $request->sheet_type,
+            'sheet_type_id'      => $sheetTypeId,
             'run_date'           => $request->run_date,
             'gates_opening'      => $request->gates_opening ?: null,
             'kick_off'           => $request->kick_off ?: null,
@@ -251,7 +275,7 @@ class DailyRunSheetController extends Controller
         $query = DailyRunSheetItem::with('runSheet.functionalArea')
             ->whereHas('runSheet', function ($q) use ($eventId, $sheet) {
                 $q->where('event_id', $eventId)
-                    ->where('sheet_type', $sheet->sheet_type);
+                    ->where('sheet_type_id', $sheet->sheet_type_id);
             });
 
         if ($request->filled('search')) {
@@ -312,7 +336,7 @@ class DailyRunSheetController extends Controller
             'venue_id'           => $sheet->venue_id,
             'match_id'           => $sheet->match_id,
             'functional_area_id' => $sheet->functional_area_id,
-            'sheet_type'         => $sheet->sheet_type,
+            'sheet_type'         => $sheet->sheet_type_id,
             'run_date'           => $sheet->run_date,
             'gates_opening'      => $sheet->gates_opening ? Carbon::parse($sheet->gates_opening)->format('H:i') : '',
             'kick_off'           => $sheet->kick_off ? Carbon::parse($sheet->kick_off)->format('H:i') : '',
@@ -324,7 +348,7 @@ class DailyRunSheetController extends Controller
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'id'                 => 'required|integer|exists:daily_run_sheets,id',
             'venue_id'           => 'required|integer',
-            'sheet_type'         => 'required|string|max:50',
+            'sheet_type'         => 'required|integer|exists:sheet_types,id',
             'run_date'           => 'required|date',
             // 'gates_opening'      => 'nullable|date_format:H:i',
             // 'kick_off'           => 'nullable|date_format:H:i',
@@ -350,10 +374,11 @@ class DailyRunSheetController extends Controller
 
         $matchId          = $request->match_id ?: null;
         $functionalAreaId = $request->functional_area_id ?: null;
+        $sheetTypeId      = $request->sheet_type;
 
         $duplicate = DailyRunSheet::where('event_id', session()->get('EVENT_ID'))
             ->where('venue_id', $request->venue_id)
-            ->where('sheet_type', $request->sheet_type)
+            ->where('sheet_type_id', $sheetTypeId)
             ->where('match_id', $matchId)
             ->where('functional_area_id', $functionalAreaId)
             ->where('id', '!=', $request->id)
@@ -371,7 +396,7 @@ class DailyRunSheetController extends Controller
             'venue_id'           => $request->venue_id,
             'match_id'           => $matchId,
             'functional_area_id' => $functionalAreaId,
-            'sheet_type'         => $request->sheet_type,
+            'sheet_type_id'      => $sheetTypeId,
             'run_date'           => $request->run_date,
             'gates_opening'      => $request->gates_opening ?: null,
             'kick_off'           => $request->kick_off ?: null,
@@ -415,15 +440,15 @@ class DailyRunSheetController extends Controller
         $sheet   = DailyRunSheet::findOrFail($id);
         $eventId = $sheet->event_id;
 
-        $sheets = DailyRunSheet::with(['venue', 'functionalArea'])
+        $sheets = DailyRunSheet::with(['venue', 'functionalArea', 'sheetType'])
             ->where('event_id', $eventId)
             ->where('id', '!=', $id)
-            ->orderBy('sheet_type')
+            ->orderBy('sheet_type_id')
             ->get()
             ->map(fn($s) => [
                 'id'             => $s->id,
                 'label'          => implode(' · ', array_filter([
-                    $s->sheet_type,
+                    $s->sheetType?->code ?? 'N/A',
                     $s->venue?->short_name,
                     $s->functionalArea?->fa_code,
                     $s->run_date_dmy,
@@ -662,7 +687,7 @@ class DailyRunSheetController extends Controller
 
     // ── MD Triple creation ───────────────────────────────────────────────────
 
-    private function createMdTriple(Request $request, string $eventId, ?int $matchId): \Illuminate\Http\JsonResponse
+    private function createMdTriple(Request $request, string $eventId, ?int $matchId, int $sheetTypeId): \Illuminate\Http\JsonResponse
     {
         $faCodes = ['CMP', 'SEC', 'VUM'];
         $fas     = FunctionalArea::whereIn('fa_code', $faCodes)->get()->keyBy('fa_code');
@@ -678,7 +703,7 @@ class DailyRunSheetController extends Controller
         foreach ($faCodes as $code) {
             $exists = DailyRunSheet::where('event_id', $eventId)
                 ->where('venue_id', $request->venue_id)
-                ->where('sheet_type', 'MD')
+                ->where('sheet_type_id', $sheetTypeId)
                 ->where('match_id', $matchId)
                 ->where('functional_area_id', $fas[$code]->id)
                 ->exists();
@@ -697,7 +722,7 @@ class DailyRunSheetController extends Controller
                 'venue_id'           => $request->venue_id,
                 'match_id'           => $matchId,
                 'functional_area_id' => $fas[$code]->id,
-                'sheet_type'         => 'MD',
+                'sheet_type_id'      => $sheetTypeId,
                 'run_date'           => $request->run_date,
                 'gates_opening'      => $request->gates_opening ?: null,
                 'kick_off'           => $request->kick_off ?: null,
@@ -812,12 +837,105 @@ class DailyRunSheetController extends Controller
         return response()->json($matches);
     }
 
+    public function matchesBySheetType(Request $request)
+    {
+        $eventId = session()->get('EVENT_ID');
+        $sheetTypeId = $request->input('sheet_type_id');
+        $venueId = $request->input('venue_id');
+
+        if (!$sheetTypeId || !$venueId) {
+            return response()->json([]);
+        }
+
+        $sheetType = SheetType::findOrFail($sheetTypeId);
+
+        // If the sheet type is tied to a specific match, return only that match
+        if ($sheetType->match_id) {
+            $matches = EventMatch::where('id', $sheetType->match_id)
+                ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2', 'gates_opening', 'kick_off']);
+        } else {
+            // Otherwise, return all matches for this venue in this event
+            $matches = EventMatch::where('event_id', $eventId)
+                ->where('venue_id', $venueId)
+                ->orderBy('match_date')
+                ->get(['id', 'match_number', 'match_date', 'pma1', 'pma2', 'gates_opening', 'kick_off']);
+        }
+
+        return response()->json($matches);
+    }
+
+    // ── Sheet Types by Event & Venue ─────────────────────────────────────────
+
+    public function getSheetTypes(Request $request)
+    {
+        $eventId = session()->get('EVENT_ID');
+        $venueId = $request->input('venue_id');
+
+        if (!$venueId) {
+            return response()->json(['types' => []]);
+        }
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        try {
+            // Query all sheet types for this venue (regardless of event, initially)
+            if ($user->hasRole('Customer')) {
+                $types = SheetType::where('available_to_customer', true)
+                    ->where(function ($q) use ($venueId) {
+                        $q->whereNull('venue_id')->orWhere('venue_id', $venueId);
+                    })
+                    ->with('match')
+                    ->orderBy('sort_order')
+                    ->get();
+            } else {
+                $types = SheetType::query()
+                    ->where(function ($q) use ($venueId) {
+                        $q->whereNull('venue_id')->orWhere('venue_id', $venueId);
+                    })
+                    ->with('match')
+                    ->orderBy('sort_order')
+                    ->get();
+            }
+
+            $formattedTypes = $types->map(function ($t) {
+                // Calculate MD-x date based on match and sheet type code
+                $dateLabel = $t->title; // fallback to title
+                
+                if ($t->match && $t->match->match_date) {
+                    $daysOffset = 0;
+                    if (preg_match('/MD-?(\d+)/', $t->code, $matches)) {
+                        $daysOffset = (int)$matches[1];
+                        $calcDate = \Carbon\Carbon::parse($t->match->match_date)->subDays($daysOffset);
+                        $dateLabel = $calcDate->format('d/m/Y') . ' - ' . $t->code;
+                    } elseif ($t->code === 'MD') {
+                        $dateLabel = \Carbon\Carbon::parse($t->match->match_date)->format('d/m/Y') . ' - MD';
+                    }
+                } else {
+                    // No match associated, just show code
+                    $dateLabel = $t->code;
+                }
+
+                return [
+                    'id' => $t->id,
+                    'code' => $t->code,
+                    'title' => $dateLabel,
+                ];
+            });
+
+            return response()->json(['types' => $formattedTypes]);
+        } catch (\Throwable $e) {
+            \Log::error('Error loading sheet types: ' . $e->getMessage());
+            return response()->json(['types' => []]);
+        }
+    }
+
     // ── Export ───────────────────────────────────────────────────────────────
 
     public function export($id)
     {
-        $sheet = DailyRunSheet::findOrFail($id);
-        $filename = 'DailyRunSheet_' . $sheet->sheet_type . '_' . $sheet->run_date . '.xlsx';
+        $sheet = DailyRunSheet::with('sheetType')->findOrFail($id);
+        $filename = 'DailyRunSheet_' . ($sheet->sheetType?->code ?? 'sheet') . '_' . $sheet->run_date . '.xlsx';
 
         return Excel::download(new DailyRunSheetExport($id), $filename);
     }

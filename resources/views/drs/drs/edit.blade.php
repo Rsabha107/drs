@@ -6,7 +6,7 @@
         <ol class="breadcrumb breadcrumb-style1 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
             <li class="breadcrumb-item"><a href="{{ route('drs.drs.index') }}">Daily Run Sheets</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('drs.drs.show', $sheet->id) }}">{{ $sheet->sheet_type }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('drs.drs.show', $sheet->id) }}">{{ $sheet->sheetType?->code ?? 'N/A' }}</a></li>
             <li class="breadcrumb-item active">Edit</li>
         </ol>
     </nav>
@@ -41,11 +41,23 @@
 
                 <div class="col-md-6">
                     <label class="form-label">Sheet Type <span class="text-danger">*</span></label>
+                    @php
+                        $mdDateLabel = $sheet->sheetType?->code ?? 'N/A';
+                        if ($sheet->match && $sheet->match->match_date && $sheet->sheetType) {
+                            if (preg_match('/MD-?(\d+)/', $sheet->sheetType->code, $m)) {
+                                $daysOffset = (int)$m[1];
+                                $calcDate = \Carbon\Carbon::parse($sheet->match->match_date)->subDays($daysOffset);
+                                $mdDateLabel = $calcDate->format('d/m/Y') . ' - ' . $sheet->sheetType->code;
+                            } elseif ($sheet->sheetType->code === 'MD') {
+                                $mdDateLabel = \Carbon\Carbon::parse($sheet->match->match_date)->format('d/m/Y') . ' - MD';
+                            }
+                        }
+                    @endphp
                     <select name="sheet_type" class="form-select" required>
-                        @foreach(['MD-3','MD-2','MD-1','MD','MD FINAL','MD+1'] as $t)
-                            <option value="{{ $t }}" {{ $sheet->sheet_type == $t ? 'selected' : '' }}>{{ $t }}</option>
-                        @endforeach
+                        <option value="">Select type</option>
+                        <option value="{{ $sheet->sheet_type_id }}" selected>{{ $mdDateLabel }}</option>
                     </select>
+                    <small class="text-muted">This field is managed dynamically. Use the modal form to change it.</small>
                 </div>
 
                 <div class="col-md-6">

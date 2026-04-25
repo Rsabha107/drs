@@ -48,6 +48,11 @@ class DailyRunSheet extends Model
         return $this->belongsTo(FunctionalArea::class, 'functional_area_id');
     }
 
+    public function sheetType()
+    {
+        return $this->belongsTo(SheetType::class, 'sheet_type_id');
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

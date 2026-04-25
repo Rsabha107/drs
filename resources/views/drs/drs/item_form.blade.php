@@ -8,7 +8,7 @@
         <ol class="breadcrumb breadcrumb-style1 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
             <li class="breadcrumb-item"><a href="{{ route('drs.drs.index') }}">Daily Run Sheets</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('drs.drs.show', $sheet->id) }}">{{ $sheet->sheet_type }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('drs.drs.show', $sheet->id) }}">{{ $sheet->sheetType?->code ?? 'N/A' }}</a></li>
             <li class="breadcrumb-item active">{{ $isEdit ? 'Edit Item' : 'Add Item' }}</li>
         </ol>
     </nav>

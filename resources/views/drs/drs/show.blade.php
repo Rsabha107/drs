@@ -124,7 +124,7 @@
             <ol class="breadcrumb breadcrumb-style1 mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('drs.drs.index') }}">Daily Run Sheets</a></li>
-                <li class="breadcrumb-item active">{{ $sheet->sheet_type }} &mdash; {{ $sheet->run_date_dmy }}</li>
+                <li class="breadcrumb-item active">{{ $sheet->sheetType?->code ?? 'N/A' }} &mdash; {{ $sheet->run_date_dmy }}</li>
             </ol>
         </nav>
         <div class="d-flex gap-2">
@@ -172,7 +172,7 @@
                                 </div>
                                 <div class="text-muted mt-4">
                                     <h4>
-                                        {{ $sheet->sheet_type ?? 'N/A' }}
+                                        {{ $sheet->sheetType?->code ?? 'N/A' }}
                                         <i class="mdi mdi-chevron-up ms-1 text-success">
                                         </i>
                                     </h4>
@@ -312,7 +312,7 @@
             {{-- Sheet header --}}
             {{-- <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <h4 class="fw-bold mb-1" id="show-sheet-type">Daily Run Sheet ({{ $sheet->sheet_type }})</h4>
+                    <h4 class="fw-bold mb-1" id="show-sheet-type">Daily Run Sheet ({{ $sheet->sheetType?->code ?? 'N/A' }})</h4>
                     <div class="text-muted small">{{ $event->name ?? '' }}</div>
                 </div>
                 <table class="drs-header-table table table-bordered mb-0" style="width:340px;">

@@ -141,6 +141,7 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
             Route::get('/drs/setting/sheet-type', 'index')->name('drs.setting.sheet.type');
             Route::get('/drs/setting/sheet-type/list', 'list')->name('drs.setting.sheet.type.list');
             Route::get('/drs/setting/sheet-type/get/{id}', 'get')->name('drs.setting.sheet.type.get');
+            Route::get('/drs/setting/sheet-type/get-matches', 'getMatches')->name('drs.setting.sheet.type.get-matches');
             Route::post('/drs/setting/sheet-type/update', 'update')->name('drs.setting.sheet.type.update');
             Route::delete('/drs/setting/sheet-type/delete/{id}', 'delete')->name('drs.setting.sheet.type.delete');
             Route::post('/drs/setting/sheet-type/store', 'store')->name('drs.setting.sheet.type.store');
@@ -214,6 +215,8 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
         Route::post('/drs/drs/store',                   'store')->name('drs.drs.store');
         Route::get('/drs/drs/{id}/get',                 'get')->name('drs.drs.get');
         Route::get('/drs/venue/{id}/matches',           'matchesByVenue')->name('drs.venue.matches');
+        Route::get('/drs/sheet-type/matches',           'matchesBySheetType')->name('drs.sheet-type.matches');
+        Route::get('/drs/drs/sheet-types',              'getSheetTypes')->name('drs.drs.get-sheet-types');
         Route::get('/drs/drs/{id}',                     'show')->name('drs.drs.show');
         Route::get('/drs/drs/{id}/edit',                'edit')->name('drs.drs.edit');
         Route::post('/drs/drs/update',                  'update')->name('drs.drs.update');

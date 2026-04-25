@@ -99,6 +99,8 @@
                             <th data-field="sheet_type" data-sortable="true">Sheet Type</th>
                             <th data-field="venue" data-sortable="false">Venue</th>
                             <th data-field="match" data-sortable="false">Match#</th>
+                            <th data-field="match_date" data-sortable="false">Match Date</th>
+                            <th data-field="md_date" data-sortable="false">MD-x Date</th>
                             <th data-field="teams" data-sortable="false">Teams</th>
                             <th data-field="functional_area" data-sortable="false">Func. Area</th>
                             <th data-field="run_date" data-sortable="true">Date</th>
@@ -229,10 +231,6 @@
             }
 
             // ── Helpers ────────────────────────────────────────────────
-            function isMdType($form) {
-                return $form.find('[name="sheet_type"]').val() === 'MD';
-            }
-
             function clearMatchSelect($matchSelect, $form) {
                 $matchSelect.empty()
                     .append('<option value="">N/A</option>')
@@ -248,7 +246,7 @@
                 $form.find('[id$="_drs_teams"]').prop('disabled', disabled);
             }
 
-            function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId) {
+            function loadDrsMatches($venueSelect, $matchSelect, selectedMatchId, onComplete) {
                 var venueId = $venueSelect.val();
                 var $form = $matchSelect.closest('form');
                 var dfd = $.Deferred();
@@ -269,40 +267,136 @@
                     type: 'GET',
                     dataType: 'json',
                     success: function(matches) {
-                        $matchSelect.empty().append(
-                            '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>'
-                            );
-                        $.each(matches, function(i, m) {
-                            var label = 'M' + m.match_number + ' — ' + m.match_date;
-                            var selected = (selectedMatchId && m.id == selectedMatchId) ?
-                                ' selected' : '';
-                            $matchSelect.append(
-                                '<option value="' + m.id + '"' +
-                                ' data-date="' + m.match_date + '"' +
-                                ' data-pma1="' + (m.pma1 || '') + '"' +
-                                ' data-pma2="' + (m.pma2 || '') + '"' +
-                                ' data-gates-opening="' + (m.gates_opening || '') + '"' +
-                                ' data-kick-off="' + (m.kick_off || '') + '"' +
-                                selected + '>' + label + '</option>'
-                            );
-                        });
-
-                        // Enable match and dependent fields
-                        $matchSelect.prop('disabled', false);
-                        setMatchDependents($form, false);
-
-                        // If a match was preselected, fill date and teams immediately
-                        if (selectedMatchId) {
-                            var $selected = $matchSelect.find('option:selected');
-                            var date = $selected.data('date');
-                            if (date) $form.find('[name="run_date"]').val(date);
-                            fillTeams($form, $selected.data('pma1'), $selected.data('pma2'));
-                        }
+                        populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete);
                         dfd.resolve();
                     },
                     error: function() {
                         $matchSelect.empty().append(
                             '<option value="">— could not load matches —</option>');
+                        dfd.reject();
+                    }
+                });
+
+                return dfd.promise();
+            }
+
+            // Load matches filtered by sheet type (shows only matches for that sheet type)
+            function loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, selectedMatchId, onComplete) {
+                var venueId = $venueSelect.val();
+                var sheetTypeId = $sheetTypeSelect.val();
+                var $form = $matchSelect.closest('form');
+                var dfd = $.Deferred();
+
+                $matchSelect.empty().append('<option value="">N/A</option>').prop('disabled', true);
+                setMatchDependents($form, true);
+
+                if (!venueId || !sheetTypeId) {
+                    $matchSelect.append('<option value="" disabled selected>— select venue and sheet type first —</option>');
+                    dfd.resolve();
+                    return dfd.promise();
+                }
+
+                $matchSelect.append('<option value="" disabled selected>Loading…</option>');
+
+                $.ajax({
+                    url: '/drs/sheet-type/matches',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { sheet_type_id: sheetTypeId, venue_id: venueId },
+                    success: function(matches) {
+                        populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete);
+                        dfd.resolve();
+                    },
+                    error: function() {
+                        $matchSelect.empty().append(
+                            '<option value="">— could not load matches —</option>');
+                        dfd.reject();
+                    }
+                });
+
+                return dfd.promise();
+            }
+
+            // Helper function to populate match select options
+            function populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete) {
+                $matchSelect.empty().append(
+                    '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>'
+                    );
+                $.each(matches, function(i, m) {
+                    var label = 'M' + m.match_number + ' — ' + m.match_date;
+                    var selected = (selectedMatchId && m.id == selectedMatchId) ?
+                        ' selected' : '';
+                    $matchSelect.append(
+                        '<option value="' + m.id + '"' +
+                        ' data-date="' + m.match_date + '"' +
+                        ' data-pma1="' + (m.pma1 || '') + '"' +
+                        ' data-pma2="' + (m.pma2 || '') + '"' +
+                        ' data-gates-opening="' + (m.gates_opening || '') + '"' +
+                        ' data-kick-off="' + (m.kick_off || '') + '"' +
+                        selected + '>' + label + '</option>'
+                    );
+                });
+
+                // Enable match and dependent fields
+                $matchSelect.prop('disabled', false);
+                setMatchDependents($form, false);
+
+                // If a match was preselected, fill date and teams immediately
+                if (selectedMatchId) {
+                    var $selected = $matchSelect.find('option:selected');
+                    var date = $selected.data('date');
+                    if (date) $form.find('[name="run_date"]').val(date);
+                    fillTeams($form, $selected.data('pma1'), $selected.data('pma2'));
+                    // Fill gates opening and kickoff
+                    var gatesOpening = $selected.data('gates-opening');
+                    var kickOff = $selected.data('kick-off');
+                    if (gatesOpening) $form.find('[name="gates_opening"]').val(gatesOpening);
+                    if (kickOff) $form.find('[name="kick_off"]').val(kickOff);
+                }
+
+                // Call completion callback if provided
+                if (typeof onComplete === 'function') {
+                    onComplete();
+                }
+            }
+
+            // ── Load Sheet Types by Venue ───────────────────────────────
+            function loadSheetTypes($venueSelect, $sheetTypeSelect) {
+                var venueId = $venueSelect.val();
+                var dfd = $.Deferred();
+
+                $sheetTypeSelect.empty().append('<option value="">Loading…</option>').prop('disabled', true);
+
+                if (!venueId) {
+                    $sheetTypeSelect.empty().append('<option value="">Select venue first</option>').prop('disabled', true);
+                    dfd.resolve();
+                    return dfd.promise();
+                }
+
+                $.ajax({
+                    url: '{{ route("drs.drs.get-sheet-types") }}',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { venue_id: venueId },
+                    headers: { "X-CSRF-TOKEN": $('input[name="_token"]').val() },
+                    success: function(response) {
+                        $sheetTypeSelect.empty();
+                        
+                        if (response.types && response.types.length > 0) {
+                            $sheetTypeSelect.append('<option value="">Select type</option>');
+                            $.each(response.types, function(i, type) {
+                                $sheetTypeSelect.append(
+                                    '<option value="' + type.id + '" data-code="' + type.code + '" data-title="' + type.title + '">' + type.title + '</option>'
+                                );
+                            });
+                            $sheetTypeSelect.prop('disabled', false);
+                        } else {
+                            $sheetTypeSelect.append('<option value="">No types available</option>').prop('disabled', true);
+                        }
+                        dfd.resolve();
+                    },
+                    error: function() {
+                        $sheetTypeSelect.empty().append('<option value="">— could not load types —</option>').prop('disabled', true);
                         dfd.reject();
                     }
                 });
@@ -326,45 +420,81 @@
             // Venue change in create modal
             $('#create_drs_venue_id').on('change', function() {
                 var $form = $('#create_drs_form');
-                if (isMdType($form)) {
-                    loadDrsMatches($(this), $('#create_drs_match_id'), null);
-                } else {
-                    clearMatchSelect($('#create_drs_match_id'), $form);
-                }
+                var $sheetTypeSelect = $('#create_drs_sheet_type');
+                var $matchSelect = $('#create_drs_match_id');
+                
+                // Load sheet types for this venue and clear dependent fields
+                loadSheetTypes($(this), $sheetTypeSelect);
+                clearMatchSelect($matchSelect, $form);
+                $sheetTypeSelect.val(''); // Clear sheet type selection
             });
 
             // Venue change in edit modal
             $('#edit_drs_venue_id').on('change', function() {
                 var $form = $('#edit_drs_form');
-                if (isMdType($form)) {
-                    loadDrsMatches($(this), $('#edit_drs_match_id'), null);
-                } else {
-                    clearMatchSelect($('#edit_drs_match_id'), $form);
-                }
+                var $sheetTypeSelect = $('#edit_drs_sheet_type');
+                var $matchSelect = $('#edit_drs_match_id');
+                
+                // Load sheet types for this venue and clear dependent fields
+                loadSheetTypes($(this), $sheetTypeSelect);
+                clearMatchSelect($matchSelect, $form);
+                $sheetTypeSelect.val(''); // Clear sheet type selection
             });
 
-            // Sheet type change in create modal
-            $('#create_drs_form [name="sheet_type"]').on('change', function() {
-                var $form = $('#create_drs_form');
-                if ($(this).val() === 'MD') {
-                    loadDrsMatches($('#create_drs_venue_id'), $('#create_drs_match_id'), null);
-                } else {
-                    clearMatchSelect($('#create_drs_match_id'), $form);
+            // ── Sheet type change: Auto-populate date and teams ───────────────────
+            function onSheetTypeChange($sheetTypeSelect, $form) {
+                var $opt = $sheetTypeSelect.find('option:selected');
+                var sheetTypeCode = $opt.data('code');
+                var sheetTypeTitle = $opt.data('title');
+                var $runDateInput = $form.find('[name="run_date"]');
+                var $matchSelect = $form.find('[name="match_id"]');
+                var $venueSelect = $form.find('[name="venue_id"]');
+
+                // Extract date from title (e.g., "27/03/2026 - MD-3" → "27/03/2026")
+                if (sheetTypeTitle && sheetTypeTitle.includes(' - ')) {
+                    var mdDate = sheetTypeTitle.split(' - ')[0].trim();
+                    // Convert d/m/Y to Y-m-d for the date input
+                    var parts = mdDate.split('/');
+                    if (parts.length === 3) {
+                        var isoDate = parts[2] + '-' + parts[1] + '-' + parts[0];
+                        $runDateInput.val(isoDate);
+                    }
                 }
+
+                // Load matches if code is 'MD' and auto-select first match
+                if (sheetTypeCode === 'MD') {
+                    // Load matches filtered by this sheet type
+                    loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, null, function() {
+                        // After matches load, auto-select the first non-NA match
+                        var $firstMatch = $matchSelect.find('option:not([value=""])').first();
+                        if ($firstMatch.length) {
+                            $matchSelect.val($firstMatch.val());
+                            // Trigger change to populate match date, teams, gates opening, kickoff
+                            $matchSelect.trigger('change');
+                        }
+                    });
+                } else {
+                    clearMatchSelect($matchSelect, $form);
+                }
+            }
+
+            // Sheet type change in create modal
+            $('#create_drs_sheet_type').on('change', function() {
+                var $form = $('#create_drs_form');
+                onSheetTypeChange($(this), $form);
             });
 
             // Sheet type change in edit modal
-            $('#edit_drs_form [name="sheet_type"]').on('change', function() {
+            $('#edit_drs_sheet_type').on('change', function() {
                 var $form = $('#edit_drs_form');
-                if ($(this).val() === 'MD') {
-                    loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'), null);
-                } else {
-                    clearMatchSelect($('#edit_drs_match_id'), $form);
-                }
+                onSheetTypeChange($(this), $form);
             });
 
             // Reset match select when create modal closes
             $('#create_drs_modal').on('hidden.bs.modal', function() {
+                $('#create_drs_sheet_type').empty()
+                    .append('<option value="">Select venue first</option>')
+                    .prop('disabled', true);
                 $('#create_drs_match_id').empty()
                     .append('<option value="">— select a venue first —</option>')
                     .prop('disabled', true);
@@ -415,7 +545,6 @@
                     dataType: 'json',
                     success: function(data) {
                         $('#edit_drs_id').val(data.id);
-                        $('#edit_drs_form [name="sheet_type"]').val(data.sheet_type);
                         $('#edit_drs_form [name="run_date"]').val(data.run_date);
                         $('#edit_drs_form [name="gates_opening"]').val(data.gates_opening);
                         $('#edit_drs_form [name="kick_off"]').val(data.kick_off);
@@ -424,18 +553,31 @@
                         // Set functional area
                         $('#edit_drs_functional_area_id').val(data.functional_area_id || '');
 
-                        // Only load matches for MD sheets; keep match disabled for all others
-                        $('#edit_drs_venue_id').val(data.venue_id);
-                        if (data.sheet_type === 'MD') {
-                            loadDrsMatches($('#edit_drs_venue_id'), $('#edit_drs_match_id'),
-                                    data.match_id)
-                                .always(function() {
-                                    $('#edit_drs_modal').modal('show');
-                                });
-                        } else {
-                            clearMatchSelect($('#edit_drs_match_id'), $('#edit_drs_form'));
-                            $('#edit_drs_modal').modal('show');
-                        }
+                        // Set venue and load sheet types, then populate sheet_type value
+                        var $venueSelect = $('#edit_drs_venue_id');
+                        var $sheetTypeSelect = $('#edit_drs_sheet_type');
+                        var $matchSelect = $('#edit_drs_match_id');
+                        
+                        $venueSelect.val(data.venue_id);
+                        
+                        // Load sheet types for this venue
+                        loadSheetTypes($venueSelect, $sheetTypeSelect).done(function() {
+                            // After sheet types load, populate the sheet type value
+                            $sheetTypeSelect.val(data.sheet_type);
+                            var $option = $sheetTypeSelect.find('option:selected');
+                            var sheetTypeCode = $option.data('code');
+                            
+                            // Load matches if MD type, otherwise clear them
+                            if (sheetTypeCode === 'MD') {
+                                loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, data.match_id)
+                                    .always(function() {
+                                        $('#edit_drs_modal').modal('show');
+                                    });
+                            } else {
+                                clearMatchSelect($matchSelect, $('#edit_drs_form'));
+                                $('#edit_drs_modal').modal('show');
+                            }
+                        });
                     },
                     error: function() {
                         toastr.error('Could not load run sheet data.');
@@ -448,10 +590,16 @@
 
             // ── Reset modals on close ───────────────────────────────────
             $('#create_drs_modal').on('hidden.bs.modal', function() {
+                $('#create_drs_sheet_type').empty()
+                    .append('<option value="">Select venue first</option>')
+                    .prop('disabled', true);
                 $('#create_drs_form')[0].reset();
                 $('#create_drs_form').removeClass('was-validated');
             });
             $('#edit_drs_modal').on('hidden.bs.modal', function() {
+                $('#edit_drs_sheet_type').empty()
+                    .append('<option value="">Select venue first</option>')
+                    .prop('disabled', true);
                 $('#edit_drs_form').removeClass('was-validated');
             });
 

@@ -6,7 +6,7 @@
 <table>
     {{-- Header meta rows --}}
     <tr>
-        <td style="font-weight:bold;font-size:14pt;" colspan="6">Daily Run Sheet ({{ $sheet->sheet_type }})</td>
+        <td style="font-weight:bold;font-size:14pt;" colspan="6">Daily Run Sheet ({{ $sheet->sheetType?->code ?? 'N/A' }})</td>
     </tr>
     <tr>
         <td style="font-weight:bold;">Event</td>

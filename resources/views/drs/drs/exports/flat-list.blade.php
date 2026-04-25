@@ -7,7 +7,7 @@
     <tr>
         <td style="font-weight:bold;font-size:14pt;" colspan="9">
             Daily Run Sheet
-            @if($firstSheet?->sheet_type) ({{ $firstSheet->sheet_type }}) @endif
+            @if($firstSheet?->sheetType) ({{ $firstSheet->sheetType->code }}) @endif
         </td>
     </tr>
 

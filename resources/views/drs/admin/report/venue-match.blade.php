@@ -206,7 +206,7 @@
                                                 {{ $faName }}
                                             </span>
                                             <span class="sheet-meta">
-                                                Type: {{ $sheet->sheet_type }}
+                                                Type: {{ $sheet->sheetType?->code ?? 'N/A' }}
                                                 &nbsp;|&nbsp;
                                                 Date: {{ $sheet->run_date_dmy ?? 'N/A' }}
                                                 @if ($koFormatted)

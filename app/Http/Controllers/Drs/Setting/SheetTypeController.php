@@ -3,20 +3,15 @@
 namespace App\Http\Controllers\Drs\Setting;
 
 use App\Http\Controllers\Controller;
-use App\Models\Drs\EventDocument;
-use App\Models\Drs\ParticipantDocument;
-use App\Models\Drs\TempUpload;
 use App\Models\Drs\Event;
+use App\Models\Drs\EventMatch;
 use App\Models\Drs\SheetType;
 use App\Models\Drs\Venue;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class SheetTypeController extends Controller
 {
@@ -33,10 +28,9 @@ class SheetTypeController extends Controller
 
     public function get($id)
     {
-        $op = SheetType::with(['event', 'venue'])->findOrFail($id);
+        $op = SheetType::with(['event', 'venue', 'match'])->findOrFail($id);
 
         return response()->json(['op' => $op, 'id' => $op->id]);
-        // return response()->json(['op' => $op, 'venues' => $op->venues, 'image_path' => $image_path]);
     }
 
 
@@ -45,11 +39,12 @@ class SheetTypeController extends Controller
         $search = request('search');
         $sort = (request('sort')) ? request('sort') : "id";
         $order = (request('order')) ? request('order') : "DESC";
-        $ops = SheetType::with(['event', 'venue'])->orderBy($sort, $order);
+        $ops = SheetType::with(['event', 'venue', 'match'])->orderBy($sort, $order);
 
         if ($search) {
             $ops = $ops->where(function ($query) use ($search) {
                 $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%')
                     ->orWhere('id', 'like', '%' . $search . '%');
             });
         }
@@ -57,7 +52,6 @@ class SheetTypeController extends Controller
         $limit = request("limit");
         $limit = max(1, min($limit, 100)); // min=1, max=100
         $ops = $ops->paginate($limit)->through(function ($op) {
-
 
             $div_action = '<div class="font-sans-serif btn-reveal-trigger position-static">';
             $update_action =
@@ -70,19 +64,35 @@ class SheetTypeController extends Controller
                 '" id="deleteSheetType" data-bs-toggle="tooltip" data-bs-placement="right" title="Delete">' .
                 '<i class="fa-solid fa-trash text-danger"></i></a></div></div>';
 
-
-            // $actions = $div_action . $profile_action;
-            $venues_display = '';
-
+            // Calculate match_date and md_date
+            $matchDate = '-';
+            $mdDate = '-';
+            if ($op->match && $op->match->match_date) {
+                $matchDate = \Carbon\Carbon::parse($op->match->match_date)->format('d/m/Y');
+                
+                // Extract the number from code (MD-3, MD-2, MD-1, MD)
+                $daysOffset = 0;
+                if (preg_match('/MD-?(\d+)/', $op->code, $matches)) {
+                    $daysOffset = (int)$matches[1];
+                    // For MD-3, MD-2, MD-1: subtract days from match date
+                    $calcDate = \Carbon\Carbon::parse($op->match->match_date)->subDays($daysOffset);
+                    $mdDate = $calcDate->format('d/m/Y');
+                } elseif ($op->code === 'MD') {
+                    // MD is the match date itself
+                    $mdDate = $matchDate;
+                }
+            }
 
             return  [
                 'id' => $op->id,
-                // 'id' => '<div class="align-middle white-space-wrap fw-bold fs-10 ps-2">' .$op->id. '</div>',
                 'code' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->code . '</div>',
                 'title' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->title . '</div>',
-                'description' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->description . '</div>',
-                'event' => $op->event ? '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->event->name . '</div>' : '',
-                'venue' => $op->venue ? '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->venue->title . '</div>' : '',
+                'description' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . ($op->description ?? '-') . '</div>',
+                'event' => $op->event ? '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->event->name . '</div>' : '-',
+                'venue' => $op->venue ? '<div class="align-middle white-space-wrap fs-9 ps-3">' . $op->venue->title . '</div>' : '-',
+                'match_number' => $op->match ? '<div class="align-middle white-space-wrap fs-9 ps-3">Match ' . $op->match->match_number . '</div>' : '-',
+                'match_date' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $matchDate . '</div>',
+                'md_date' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $mdDate . '</div>',
                 'actions' => $update_action . $delete_action,
                 'created_at' => format_date($op->created_at,  'H:i:s'),
                 'updated_at' => format_date($op->updated_at, 'H:i:s'),
@@ -100,16 +110,12 @@ class SheetTypeController extends Controller
         Log::info('SheetTypeController::store called');
 
         $validator = Validator::make($request->all(), [
-            'name'              => 'required|string|max:255',
-            'event_start_date'  => 'nullable|date',
-            'venue_id'          => 'nullable|array',
-            'venue_id.*'        => 'exists:venues,id',
-
-            // only for the logo (Dropify)
-            'file_name'         => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
-
-            // FilePond temp ids
-            'qid_server_ids'    => 'nullable|string',
+            'code'              => 'required|string|max:10|unique:sheet_types,code',
+            'title'             => 'required|string|max:100',
+            'description'       => 'nullable|string',
+            'event_id'          => 'required|exists:events,id',
+            'venue_id'          => 'required|exists:venues,id',
+            'match_id'          => 'nullable|exists:matches,id',
         ]);
 
         if ($validator->fails()) {
@@ -119,269 +125,132 @@ class SheetTypeController extends Controller
             ], 422);
         }
 
-        $userId   = Auth::id();
-        $serverIds = json_decode($request->input('qid_server_ids', '[]'), true) ?: [];
-
-        Log::info('EventController::store payload', [
-            'user_id'    => $userId,
-            'serverIds'  => $serverIds,
-            'name'       => $request->name,
-        ]);
-
-        DB::beginTransaction();
-
         try {
-            $op = new SheetType();
-            $op->name               = $request->name;
-            
-            // Convert date format from d/m/Y to Y-m-d
-            if ($request->event_start_date) {
-                try {
-                    $op->event_start_date = Carbon::createFromFormat('d/m/Y', $request->event_start_date)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    $op->event_start_date = $request->event_start_date;
-                }
-            }
-            
-            $op->active_flag        = 1;
-            $op->created_by         = $userId;
-            $op->updated_by         = $userId;
-
-            // =========================
-            // Upload logo (Dropify)
-            // =========================
-            $op->event_logo = 'noimage.jpg';
-
-            if ($request->hasFile('file_name')) {
-                $file = $request->file('file_name');
-
-                $safeOriginal = preg_replace('/\s+/', '_', $file->getClientOriginalName());
-                $fileNameToStore = Str::random(8) . '_' . now()->format('ymdHis') . '_' . $safeOriginal;
-
-                Storage::disk('private')->putFileAs('event/logo', $file, $fileNameToStore);
-
-                $op->event_logo = $fileNameToStore;
-            }
-
-            $op->save();
-
-            // =========================
-            // Commit FilePond uploads
-            // =========================
-            if (!empty($serverIds)) {
-                $this->commitFilepondUploads($serverIds, $op->id, 'qid');
-            }
-
-            // =========================
-            // Sync venues (if needed)
-            // =========================
-            if ($request->venue_id) {
-                foreach ($request->venue_id as $key => $data) {
-                    $op->venues()->attach($request->venue_id[$key]);
-                }
-            }
-
-            DB::commit();
+            $op = SheetType::create([
+                'code'                   => $request->code,
+                'title'                  => $request->title,
+                'description'            => $request->description,
+                'event_id'               => $request->event_id,
+                'venue_id'               => $request->venue_id,
+                'match_id'               => $request->match_id,
+                'available_to_customer'  => true,
+                'sort_order'             => 0,
+            ]);
 
             return response()->json([
                 'error'   => false,
-                'message' => 'Event created successfully.',
+                'message' => 'Sheet Type created successfully.',
                 'id'      => $op->id,
             ]);
         } catch (\Throwable $e) {
-            DB::rollBack();
-
-            Log::error('EventController::store failed', [
+            Log::error('SheetTypeController::store failed', [
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'error'   => true,
-                'message' => 'Failed to create event. ' . $e->getMessage(),
+                'message' => 'Failed to create sheet type. ' . $e->getMessage(),
             ], 500);
         }
     }
 
     public function update(Request $request)
     {
-        $userId = Auth::id();
+        Log::info('SheetTypeController::update called', ['id' => $request->id]);
 
-        // ✅ arrays coming from FilePond + staged deletes
-        $serverIds = json_decode($request->input('qid_server_ids', '[]'), true) ?: [];
-        $deleteIds = json_decode($request->input('delete_doc_ids', '[]'), true) ?: [];
-
-        Log::info('EventController::update called', [
-            'event_id'   => $request->id,
-            'serverIds'  => $serverIds,
-            'deleteIds'  => $deleteIds,
-            'user_id'    => $userId,
+        $validator = Validator::make($request->all(), [
+            'id'                => 'required|exists:sheet_types,id',
+            'code'              => 'required|string|max:10|unique:sheet_types,code,' . $request->id,
+            'title'             => 'required|string|max:100',
+            'description'       => 'nullable|string',
+            'event_id'          => 'required|exists:events,id',
+            'venue_id'          => 'required|exists:venues,id',
+            'match_id'          => 'nullable|exists:matches,id',
         ]);
-
-        // ✅ validate
-        $rules = [
-            'id'                => 'required|exists:events,id',
-            'name'              => 'required|string|max:255',
-            'event_start_date'  => 'nullable|date',
-            'active_flag'       => 'required|in:1,2',
-            'venue_id'          => 'nullable|array',
-            'venue_id.*'        => 'exists:venues,id',
-
-            // Only keep this if you really upload event_logo via normal input
-            'file_name'         => 'nullable|file|mimes:jpeg,png,jpg,webp|max:5120',
-
-            // staged deletes field
-            'delete_doc_ids'    => 'nullable|string',
-            'qid_server_ids'    => 'nullable|string',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
                 'error'   => true,
                 'message' => implode('', $validator->errors()->all('<div>:message</div>')),
-            ]);
+            ], 422);
         }
 
-        DB::beginTransaction();
-
         try {
-            $op = Event::findOrFail($request->id);
-
-            // =========================
-            // 1) Update event fields
-            // =========================
-            $op->name              = $request->name;
+            $op = SheetType::findOrFail($request->id);
             
-            // Convert date format from d/m/Y to Y-m-d
-            if ($request->event_start_date) {
-                try {
-                    $op->event_start_date = Carbon::createFromFormat('d/m/Y', $request->event_start_date)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    $op->event_start_date = $request->event_start_date;
-                }
-            }
-            
-            $op->active_flag       = $request->active_flag;
-            $op->updated_by        = $userId;
-
-            // =========================
-            // 2) Update event logo (optional - normal upload, not FilePond)
-            // =========================
-            // if ($request->hasFile('file_name')) {
-            //     $file = $request->file('file_name');
-
-            //     // safer filename
-            //     $fileNameToStore = rand() . date('ymdHis') . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-
-            //     // delete old if not default
-            //     if (!empty($op->event_logo) && $op->event_logo !== 'default.png' && $op->event_logo !== 'noimage.jpg') {
-            //         Storage::disk('private')->delete('event/logo/' . $op->event_logo);
-            //     }
-
-            //     Storage::disk('private')->putFileAs('event/logo', $file, $fileNameToStore);
-            //     $op->event_logo = $fileNameToStore;
-            // }
-
-            $op->save();
-
-            // =========================
-            // 3) Commit NEW FilePond uploads (adds DB rows + moves files)
-            // =========================
-            // NOTE: your existing method should move temp -> final and create doc rows.
-            if (!empty($serverIds)) {
-                $this->commitFilepondUploads($serverIds, $op->id, 'qid');
-            }
-
-            // =========================
-            // 4) Delete docs ONLY ON SAVE (staged deletes)
-            // =========================
-            // Ensure the table has: id, event_id, disk, path (or equivalents)
-            if (!empty($deleteIds)) {
-                $docs = EventDocument::where('event_id', $op->id)
-                    ->whereIn('id', $deleteIds)
-                    ->get();
-
-                foreach ($docs as $doc) {
-                    Storage::disk($doc->disk ?? 'private')->delete($doc->path);
-                    $doc->delete();
-                }
-            }
-
-            // =========================
-            // 5) Sync venues
-            // =========================
-            if ($op->venues) {
-                $op->venues()->detach();
-            }
-            if ($request->venue_id) {
-                foreach ($request->venue_id as $key => $data) {
-                    $op->venues()->attach($request->venue_id[$key]);
-                }
-            }
-            // $venueIds = $request->input('venue_id', []);
-            // $op->venues()->sync($venueIds);
-
-            DB::commit();
+            $op->update([
+                'code'              => $request->code,
+                'title'             => $request->title,
+                'description'       => $request->description,
+                'event_id'          => $request->event_id,
+                'venue_id'          => $request->venue_id,
+                'match_id'          => $request->match_id,
+            ]);
 
             return response()->json([
                 'error'   => false,
-                'message' => 'Event updated successfully.',
+                'message' => 'Sheet Type updated successfully.',
             ]);
         } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('EventController::update failed', [
+            Log::error('SheetTypeController::update failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'error'   => true,
-                'message' => 'Failed to update event. ' . $e->getMessage(),
+                'message' => 'Failed to update sheet type. ' . $e->getMessage(),
             ], 500);
         }
     }
 
     public function delete($id)
     {
-        Log::info('EventController::delete called', ['id' => $id, 'user_id' => auth()->id()]);
-
-        DB::beginTransaction();
+        Log::info('SheetTypeController::delete called', ['id' => $id, 'user_id' => auth()->id()]);
 
         try {
-            $event = Event::findOrFail($id);
-
-            // detach pivot first (clean + avoids FK issues)
-            $event->venues()->detach();
-
-            // delete attachments if you have them
-            // Example:
-            $docs = EventDocument::where('event_id', $event->id)->get();
-            foreach ($docs as $doc) {
-                Storage::disk($doc->disk ?? 'private')->delete($doc->path);
-                $doc->delete();
-            }
-
-            $event->delete();
-
-            DB::commit();
+            $sheetType = SheetType::findOrFail($id);
+            $sheetType->delete();
 
             return response()->json([
                 'error'   => false,
-                'message' => 'Event deleted successfully.',
+                'message' => 'Sheet Type deleted successfully.',
             ]);
         } catch (\Throwable $e) {
-            DB::rollBack();
-
-            Log::error('EventController::delete failed', [
+            Log::error('SheetTypeController::delete failed', [
                 'id'    => $id,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'error'   => true,
-                'message' => 'Failed to delete event. ' . $e->getMessage(),
+                'message' => 'Failed to delete sheet type. ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function getMatches(Request $request)
+    {
+        $eventId = $request->input('event_id');
+        $venueId = $request->input('venue_id');
+
+        if (!$eventId || !$venueId) {
+            return response()->json(['matches' => []]);
+        }
+
+        try {
+            $matches = EventMatch::where('event_id', $eventId)
+                ->where('venue_id', $venueId)
+                ->orderBy('match_number')
+                ->select('id', 'match_number')
+                ->get();
+
+            return response()->json(['matches' => $matches]);
+        } catch (\Throwable $e) {
+            Log::error('SheetTypeController::getMatches failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['matches' => []]);
         }
     }
 }

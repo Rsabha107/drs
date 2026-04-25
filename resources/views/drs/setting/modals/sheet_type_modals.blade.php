@@ -52,6 +52,12 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="create_match_id" class="form-label"><?= get_label('match_number', 'Match #') ?></label>
+                        <select id="create_match_id" name="match_id" class="form-select">
+                            <option value="">Select match</option>
+                        </select>
+                    </div>
 
 
                 </div>
@@ -121,6 +127,12 @@
                                 <option value="{{ $v->id }}">{{ $v->short_name }} &mdash; {{ $v->title }}
                                 </option>
                             @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="edit_match_id" class="form-label"><?= get_label('match_number', 'Match #') ?></label>
+                        <select id="edit_match_id" name="match_id" class="form-select">
+                            <option value="">Select match</option>
                         </select>
                     </div>
 

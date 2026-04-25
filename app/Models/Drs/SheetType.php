@@ -27,6 +27,14 @@ class SheetType extends Model
     }
 
     /**
+     * Get the match this sheet type belongs to
+     */
+    public function match(): BelongsTo
+    {
+        return $this->belongsTo(EventMatch::class, 'match_id');
+    }
+
+    /**
      * Get sheet types available to customers
      */
     public static function forCustomer($eventId = null, $venueId = null)
