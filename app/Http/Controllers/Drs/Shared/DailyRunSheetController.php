@@ -271,12 +271,9 @@ class DailyRunSheetController extends Controller
             $sort = 'start_time';
         }
 
-        // Show all items from every sheet that shares the same sheet_type within this event
+        // Show only items from this specific sheet
         $query = DailyRunSheetItem::with('runSheet.functionalArea')
-            ->whereHas('runSheet', function ($q) use ($eventId, $sheet) {
-                $q->where('event_id', $eventId)
-                    ->where('sheet_type_id', $sheet->sheet_type_id);
-            });
+            ->where('run_sheet_id', $id);
 
         if ($request->filled('search')) {
             $s = $request->search;

@@ -28,15 +28,17 @@
         </select>
     </div>
 
-
     <div class="col-md-6">
         <label class="form-label">Functional Area <span class="text-muted small">(optional)</span></label>
-        <select id="{{ $prefix }}_drs_functional_area_id" name="functional_area_id" class="form-select">
-            <option value="">N/A</option>
+        <select id="{{ $prefix }}_drs_functional_area_id" name="functional_area_id" class="form-select" data-hint="{{ $prefix }}">
+            <option value="">N/A — Create for all functional areas</option>
             @foreach ($userFas ?? [] as $fa)
                 <option value="{{ $fa->id }}">{{ $fa->fa_code }} &mdash; {{ $fa->title }}</option>
             @endforeach
         </select>
+        <small id="{{ $prefix }}_drs_fa_hint" class="text-muted d-none">
+            <strong>MD Note:</strong> Leave as "N/A" to create three sheets (CMP, SSI, VUM). Select a specific area to create one sheet.
+        </small>
     </div>
 
     <div class="col-md-6">

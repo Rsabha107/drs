@@ -304,7 +304,8 @@
                     dataType: 'json',
                     data: { sheet_type_id: sheetTypeId, venue_id: venueId },
                     success: function(matches) {
-                        populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete);
+                        var sheetTypeCode = $sheetTypeSelect.find('option:selected').data('code');
+                        populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete, sheetTypeCode);
                         dfd.resolve();
                     },
                     error: function() {
@@ -318,7 +319,7 @@
             }
 
             // Helper function to populate match select options
-            function populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete) {
+            function populateMatchSelect($matchSelect, $form, matches, selectedMatchId, onComplete, sheetTypeCode) {
                 $matchSelect.empty().append(
                     '<option value="" data-date="" data-pma1="" data-pma2="" data-gates-opening="" data-kick-off="">N/A</option>'
                     );
@@ -347,11 +348,14 @@
                     var date = $selected.data('date');
                     if (date) $form.find('[name="run_date"]').val(date);
                     fillTeams($form, $selected.data('pma1'), $selected.data('pma2'));
-                    // Fill gates opening and kickoff
-                    var gatesOpening = $selected.data('gates-opening');
-                    var kickOff = $selected.data('kick-off');
-                    if (gatesOpening) $form.find('[name="gates_opening"]').val(gatesOpening);
-                    if (kickOff) $form.find('[name="kick_off"]').val(kickOff);
+                    
+                    // Fill gates opening and kickoff only for MD sheet types
+                    if (sheetTypeCode === 'MD') {
+                        var gatesOpening = $selected.data('gates-opening');
+                        var kickOff = $selected.data('kick-off');
+                        if (gatesOpening) $form.find('[name="gates_opening"]').val(gatesOpening);
+                        if (kickOff) $form.find('[name="kick_off"]').val(kickOff);
+                    }
                 }
 
                 // Call completion callback if provided
@@ -411,9 +415,17 @@
                 var date = $opt.data('date');
                 var gatesOpening = $opt.data('gates-opening');
                 var kickOff = $opt.data('kick-off');
+                var $sheetTypeSelect = $form.find('[name="sheet_type"]');
+                var sheetTypeCode = $sheetTypeSelect.find('option:selected').data('code');
+                
                 if (date) $form.find('[name="run_date"]').val(date);
-                $form.find('[name="gates_opening"]').val(gatesOpening || '');
-                $form.find('[name="kick_off"]').val(kickOff || '');
+                
+                // Only populate gates opening and kick-off for MD sheet types
+                if (sheetTypeCode === 'MD') {
+                    $form.find('[name="gates_opening"]').val(gatesOpening || '');
+                    $form.find('[name="kick_off"]').val(kickOff || '');
+                }
+                
                 fillTeams($form, $opt.data('pma1'), $opt.data('pma2'));
             });
 
@@ -449,6 +461,7 @@
                 var $runDateInput = $form.find('[name="run_date"]');
                 var $matchSelect = $form.find('[name="match_id"]');
                 var $venueSelect = $form.find('[name="venue_id"]');
+                var $faHint = $form.find('[data-hint]'); // Get hint if it exists
 
                 // Extract date from title (e.g., "27/03/2026 - MD-3" → "27/03/2026")
                 if (sheetTypeTitle && sheetTypeTitle.includes(' - ')) {
@@ -461,21 +474,24 @@
                     }
                 }
 
-                // Load matches if code is 'MD' and auto-select first match
+                // Show/hide FA hint based on sheet type
+                var formPrefix = $form.attr('id').replace('_form', '');
                 if (sheetTypeCode === 'MD') {
-                    // Load matches filtered by this sheet type
-                    loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, null, function() {
-                        // After matches load, auto-select the first non-NA match
-                        var $firstMatch = $matchSelect.find('option:not([value=""])').first();
-                        if ($firstMatch.length) {
-                            $matchSelect.val($firstMatch.val());
-                            // Trigger change to populate match date, teams, gates opening, kickoff
-                            $matchSelect.trigger('change');
-                        }
-                    });
+                    $('#' + formPrefix + '_drs_fa_hint').removeClass('d-none');
                 } else {
-                    clearMatchSelect($matchSelect, $form);
+                    $('#' + formPrefix + '_drs_fa_hint').addClass('d-none');
                 }
+
+                // Load matches filtered by this sheet type and auto-select first match
+                loadDrsMatchesBySheetType($venueSelect, $matchSelect, $sheetTypeSelect, null, function() {
+                    // After matches load, auto-select the first non-NA match
+                    var $firstMatch = $matchSelect.find('option:not([value=""])').first();
+                    if ($firstMatch.length) {
+                        $matchSelect.val($firstMatch.val());
+                        // Trigger change to populate match date, teams, gates opening, kickoff
+                        $matchSelect.trigger('change');
+                    }
+                });
             }
 
             // Sheet type change in create modal
@@ -595,12 +611,14 @@
                     .prop('disabled', true);
                 $('#create_drs_form')[0].reset();
                 $('#create_drs_form').removeClass('was-validated');
+                $('#create_drs_fa_hint').addClass('d-none');
             });
             $('#edit_drs_modal').on('hidden.bs.modal', function() {
                 $('#edit_drs_sheet_type').empty()
                     .append('<option value="">Select venue first</option>')
                     .prop('disabled', true);
                 $('#edit_drs_form').removeClass('was-validated');
+                $('#edit_drs_fa_hint').addClass('d-none');
             });
 
             // ── Create submit ───────────────────────────────────────────
