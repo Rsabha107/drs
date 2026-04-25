@@ -11,6 +11,7 @@ use App\Models\Drs\Event;
 use Carbon\Carbon;
 use App\Models\Drs\EventMatch;
 use App\Models\Drs\FunctionalArea;
+use App\Models\Drs\SheetType;
 use App\Models\Drs\Venue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,13 +35,13 @@ class DailyRunSheetController extends Controller
 
         $event = Event::findOrFail(session()->get('EVENT_ID'));
         $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
-        // Sheet types available to this user but if SupreAdmin show all sheet types
-        $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
+        
+        // Sheet types available to this user
         if ($user->hasRole('Customer')) {
-            $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
+            $sheetTypes = SheetType::forCustomer($event->id);
+        } else {
+            $sheetTypes = SheetType::forAdmin($event->id);
         }
-
-        $sheetTypes = $sheetTypesQuery->pluck('sheet_type')->filter()->unique()->sort()->values();
 
         return view('drs.drs.list', compact('event', 'functionalAreas', 'userFaIds', 'userFas', 'sheetTypes'));
     }

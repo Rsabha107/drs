@@ -17,12 +17,11 @@
         <label class="form-label">Sheet Type <span class="text-danger">*</span></label>
         <select name="sheet_type" class="form-select" required>
             <option value="">Select type</option>
-            @foreach (auth()->user()->hasRole('Customer')
-                ? ['MD-3', 'MD-2', 'MD-1']
-                : ['MD-3', 'MD-2', 'MD-1', 'MD']
-            as $t)
-                <option value="{{ $t }}">{{ $t }}</option>
-            @endforeach
+            @forelse ($sheetTypes ?? [] as $type)
+                <option value="{{ $type->code }}">{{ $type->title }}</option>
+            @empty
+                <option value="" disabled>No sheet types available</option>
+            @endforelse
         </select>
         <div class="invalid-feedback">Please select a sheet type.</div>
     </div>

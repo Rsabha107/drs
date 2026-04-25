@@ -10,6 +10,7 @@ use App\Models\Drs\Event;
 use App\Models\Drs\EventMatch;
 use App\Models\Drs\FunctionalArea;
 use App\Models\Drs\MdTemplateItem;
+use App\Models\Drs\SheetType;
 use App\Models\Drs\Venue;
 use Carbon\Carbon;
 use FontLib\Table\Type\loca;
@@ -39,17 +40,12 @@ class DailyRunSheetController extends Controller
             $userFaIds = $userFas->pluck('id')->toArray();
         }
 
-        // Sheet types available to this user but if SupreAdmin show all sheet types
-        $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
+        // Sheet types available to this user
         if ($user->hasRole('Customer')) {
-            $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
+            $sheetTypes = SheetType::forCustomer($event->id);
+        } else {
+            $sheetTypes = SheetType::forAdmin($event->id);
         }
-
-        // $sheetTypesQuery = DailyRunSheet::where('event_id', $event->id);
-        // if ($user->hasRole('Customer')) {
-        //     $sheetTypesQuery->whereIn('functional_area_id', $userFaIds);
-        // }
-        $sheetTypes = $sheetTypesQuery->distinct()->orderBy('sheet_type')->pluck('sheet_type');
 
         return view('drs.drs.list', compact('event', 'matches', 'functionalAreas', 'userFaIds', 'userFas', 'sheetTypes'));
     }

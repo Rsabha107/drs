@@ -96,6 +96,14 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ Request::is('drs/setting/sheet-type') ? 'active' : '' }}"
+                            href="{{ route('drs.setting.sheet.type') }}">
+                            <div class="d-flex align-items-center">
+                                <span class="nav-link-text">Sheet Type</span>
+                            </div>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ Request::is('drs/setting/match') ? 'active' : '' }}"
                             href="{{ route('drs.setting.match') }}">
                             <div class="d-flex align-items-center">
