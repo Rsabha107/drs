@@ -195,6 +195,11 @@ class DailyRunSheetController extends Controller
             return $this->createMdTriple($request, $eventId, $matchId, $sheetTypeId);
         }
 
+        // MD-1 / MD-2 / MD-3 with no FA: create one sheet per functional area
+        if (preg_match('/^MD-\d+$/', $sheetType->code) && !$functionalAreaId) {
+            return $this->createForAllFunctionalAreas($request, $eventId, $matchId, $sheetTypeId);
+        }
+
 
         $duplicate = DailyRunSheet::where('event_id', $eventId)
             ->where('venue_id', $request->venue_id)
@@ -748,6 +753,69 @@ class DailyRunSheetController extends Controller
                 'row_color'       => $copy->row_color,
                 'sort_order'      => $copy->sort_order,
             ],
+        ]);
+    }
+
+    // ── Create for all Functional Areas ─────────────────────────────────────
+
+    private function createForAllFunctionalAreas(Request $request, string $eventId, ?int $matchId, int $sheetTypeId): \Illuminate\Http\JsonResponse
+    {
+        $functionalAreas = FunctionalArea::orderBy('fa_code')->get();
+
+        if ($functionalAreas->isEmpty()) {
+            return response()->json([
+                'error'   => true,
+                'message' => 'No functional areas found. Please create functional areas first.',
+            ], 422);
+        }
+
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($functionalAreas as $fa) {
+            $exists = DailyRunSheet::where('event_id', $eventId)
+                ->where('venue_id', $request->venue_id)
+                ->where('sheet_type_id', $sheetTypeId)
+                ->where('match_id', $matchId)
+                ->where('functional_area_id', $fa->id)
+                ->exists();
+
+            if ($exists) {
+                $skipped++;
+                continue;
+            }
+
+            DailyRunSheet::create([
+                'event_id'           => $eventId,
+                'venue_id'           => $request->venue_id,
+                'match_id'           => $matchId,
+                'functional_area_id' => $fa->id,
+                'sheet_type_id'      => $sheetTypeId,
+                'run_date'           => $request->run_date,
+                'gates_opening'      => $request->gates_opening ?: null,
+                'kick_off'           => $request->kick_off ?: null,
+                'created_by'         => Auth::id(),
+            ]);
+
+            $created++;
+        }
+
+        if ($created === 0) {
+            return response()->json([
+                'error'   => true,
+                'message' => 'All functional areas already have a sheet for this match and sheet type.',
+            ], 422);
+        }
+
+        $message = "{$created} Daily Run Sheet(s) created for all functional areas.";
+        if ($skipped > 0) {
+            $message .= " {$skipped} skipped (already exist).";
+        }
+
+        return response()->json([
+            'error'    => false,
+            'message'  => $message,
+            'redirect' => route('drs.drs.index'),
         ]);
     }
 
