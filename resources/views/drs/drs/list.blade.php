@@ -103,7 +103,7 @@
                             <th data-field="md_date" data-sortable="false">MD-x Date</th>
                             <th data-field="teams" data-sortable="false">Teams</th>
                             <th data-field="functional_area" data-sortable="false">Func. Area</th>
-                            <th data-field="run_date" data-sortable="true">Date</th>
+                            {{-- <th data-field="run_date" data-sortable="true">Date</th> --}}
                             <th data-field="gates_opening" data-sortable="true">Gates Opening</th>
                             <th data-field="kick_off" data-sortable="true">Kick-Off</th>
                             <th data-field="items_count" data-sortable="false">Items</th>
