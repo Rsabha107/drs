@@ -10,11 +10,13 @@ You can now access the system using the following details:</p>
 
     <ul>
         <li>Username: {{ $details['email'] }}</li>
-        <li>Password: {{ $details['password'] }}</li>
+        <li>Event: {{ $details['event'] }}</li>
+        <li>Venue: {{ $details['venue'] }}</li>
+        <li>Functional Area: {{ $details['functional_area'] }}</li>
     </ul>
 
     <p>To get started, please log in to your account using the link below:</p>
-    <p><a href="https://drs.sc.qa">Log In to Your DRS System Account</a></p>
+    <p><a href="{{ $details['url'] }}">Log In to Your DRS System Account</a></p>
     <p>If you encounter any issues logging in or need assistance, please contact the DRS Support Team at drs@sc.qa.</p>
     <p>Best regards,<br>DRS Support Team</p>
 </body>

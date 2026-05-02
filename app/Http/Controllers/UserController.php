@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\AccessGrantedMail;
 use App\Mail\AccountCreationMail;
 use App\Models\Gms\Guardian;
+use App\Models\SignedUrlToken;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,35 +32,33 @@ class UserController extends Controller
     public function store(Request $request)
     {
 
-        appLog('UserController@store - Request: ' . json_encode($request->all()));
+        Log::info('UserController@store - Request: ' . json_encode($request->all()));
 
         $rules = [
-                'name' => 'required|max:255',
-                'email' => 'required|email|unique:users,email',
-                'phone' => 'required|max:15',
-                'password' => ['required', 'confirmed', Password::defaults()],
-            ];
+            'name' => 'required|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ];
 
-            $message = '
+        $message = '
             [
                 "name.required" => "Name is required",
                 "email.required" => "Email is required",
                 "email.email" => "Provide a valid email",
                 "email.unique" => "Email already exists",
-                "phone.required" => "Phone is required",
                 "password.required" => "Password is required",
                 "password.confirmed" => "Password confirmation does not match",
                 "password.min" => "Password must be at least 8 characters",
                 "password.max" => "Password must not exceed 16 characters",
             ]';
 
-            $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($request->all(), $rules);
 
-            if ($validator->fails()) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors($validator);
-            }
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors($validator);
+        }
 
         try {
 
@@ -92,7 +91,7 @@ class UserController extends Controller
 
             $user->assignRole($intRoles);
 
-            appLog('Assigning roles: ' . json_encode($intRoles));
+            Log::info('Assigning roles: ' . json_encode($intRoles));
 
             // if ($request->roles) {
             //     $user->assignRole($intRoles);
@@ -100,23 +99,46 @@ class UserController extends Controller
 
             if (!empty($request->event_id)) {
                 foreach ($request->event_id as $key => $event) {
-                    appLog('Attaching event ID: ' . $event);
-                    // appLog('User ID: ' . $user->id);
-                    // appLog('Event ID: ' . $event);
+                    Log::info('Attaching event ID: ' . $event);
+                    // Log::info('User ID: ' . $user->id);
+                    // Log::info('Event ID: ' . $event);
                     $user->events()->attach($request->event_id[$key]);
                 }
             }
 
-            // if (!empty($request->functional_id)) {
-            //     foreach ($request->functional_id as $key => $functional) {
-            //         appLog('Attaching functional ID: ' . $functional);
-            //         appLog('User ID: ' . $user->id);
-            //         appLog('Functional ID: ' . $functional);
-            //         $user->fa()->attach($request->functional_id[$key]);
-            //     }
-            // }
+            if (!empty($request->venue_id)) {
+                foreach ($request->venue_id as $key => $venue) {
+                    Log::info('Attaching venue ID: ' . $venue);
+                    // Log::info('User ID: ' . $user->id);
+                    // Log::info('Venue ID: ' . $venue);
+                    $user->venues()->attach($request->venue_id[$key]);
+                }
+            }
 
-            // $this->UtilController->save_files($request, $data->id);
+            if (!empty($request->functional_area_id )) {
+                foreach ($request->functional_area_id as $key => $functional_area) {
+                    Log::info('Attaching functional area ID: ' . $functional_area);
+                    // Log::info('User ID: ' . $user->id);
+                    // Log::info('Functional Area ID: ' . $functional_area);
+                    $user->fa()->attach($request->functional_area_id[$key]);
+                }
+            }
+
+            // Mark the signed URL token as used
+            if ($request->has('token')) {
+                $token = $request->input('token');
+                Log::info('Looking for token: ' . $token);
+                
+                $urlToken = SignedUrlToken::where('token', $token)->first();
+                if ($urlToken) {
+                    $urlToken->markAsUsed();
+                    Log::info('Marked signed URL token as used: ' . $urlToken->token);
+                } else {
+                    Log::warning('Token not found in database: ' . $token);
+                }
+            } else {
+                Log::info('No token found in request');
+            }
 
             $notification = array(
                 'message'       => 'User created successfully',
@@ -127,10 +149,20 @@ class UserController extends Controller
                 $eventNames = $user->events()->exists()
                     ? $user->events->pluck('name')->implode(', ')
                     : 'N/A';
+                $venueNames = $user->venues()->exists()
+                    ? $user->venues->pluck('title')->implode(', ')
+                    : 'N/A';
+                $faNames = $user->fa()->exists()
+                    ? $user->fa->pluck('title')->implode(', ')
+                    : 'N/A';
                 $details = [
                     'name' => $user->name,
                     'email' => $user->email,
                     'password' => $request->password,
+                    'url' => config('app.url'),
+                    'event' => $eventNames,
+                    'venue' => $venueNames,
+                    'functional_area' => $faNames,
                 ];
                 // Send email notification
                 Mail::to($user->email)->send(new AccountCreationMail($details));
@@ -139,7 +171,7 @@ class UserController extends Controller
 
             return Redirect::route('login')->with($notification);
         } catch (\Exception $e) {
-            appLog('Validation error in UserController@store: ' . $e->getMessage());
+            Log::info('Validation error in UserController@store: ' . $e->getMessage());
             return redirect()->back()->withErrors($e->getMessage())->withInput();
         }
 
@@ -152,25 +184,29 @@ class UserController extends Controller
     public function msStore(Request $request)
     {
 
-        appLog('UserController@msStore - Request: ' . json_encode($request->all()));
+        Log::info('UserController@msStore - Request: ' . json_encode($request->all()));
         DB::beginTransaction();
         try {
             $rules = [
                 'name' => 'required|max:255',
                 'email' => 'required|email|unique:users,email',
-                'phone' => 'nullable|max:15',
+                // 'phone' => 'nullable|max:15',
                 'event_id' => 'required',
                 'roles' => 'required|array|min:1',
             ];
 
+            if (config('settings.functional_area_user_management')) {
+                $rules['fa_id'] = 'required|array|min:1';
+            }
+
             $message = '
             [
+                "event_id.required" => "At least one event must be selected",
                 "name.required" => "Name is required",
                 "email.required" => "Email is required",
                 "email.email" => "Provide a valid email",
                 "email.unique" => "Email already exists",
-                "phone.max" => "Phone number cannot exceed 15 characters",
-                "client_id.required" => "Client selection is required",
+                // "phone.max" => "Phone number cannot exceed 15 characters",
             ]';
 
             $validator = Validator::make($request->all(), $rules);
@@ -191,7 +227,7 @@ class UserController extends Controller
             $user->employee_id = 0;
             $user->name = $request->name;
             $user->email = $request->email;
-            $user->phone = $request->phone;
+            // $user->phone = $request->phone;
             // $user->password = Hash::make($request->password);
             $user->status = 1;
             $user->usertype = 'user';
@@ -211,7 +247,7 @@ class UserController extends Controller
 
             if ($request->event_id) {
                 foreach ($request->event_id as $key => $data) {
-                    appLog('Event ID: ' . $data);
+                    Log::info('Event ID: ' . $data);
                     $user->events()->attach($request->event_id[$key]);
                 }
             }
@@ -222,7 +258,29 @@ class UserController extends Controller
                 }
             }
 
-            appLog('Assigning roles: ' . json_encode($intRoles));
+            if ($request->venue_id) {
+                foreach ($request->venue_id as $key => $data) {
+                    $user->venues()->attach($request->venue_id[$key]);
+                }
+            }
+
+            Log::info('Assigning roles: ' . json_encode($intRoles));
+
+            // Mark the signed URL token as used
+            if ($request->has('token')) {
+                $token = $request->input('token');
+                Log::info('Looking for token: ' . $token);
+                
+                $urlToken = SignedUrlToken::where('token', $token)->first();
+                if ($urlToken) {
+                    $urlToken->markAsUsed();
+                    Log::info('Marked signed URL token as used: ' . $urlToken->token);
+                } else {
+                    Log::warning('Token not found in database: ' . $token);
+                }
+            } else {
+                Log::info('No token found in request');
+            }
 
             $notification = array(
                 'message'       => 'User created successfully',
@@ -233,11 +291,20 @@ class UserController extends Controller
                 $eventNames = $user->events()->exists()
                     ? $user->events->pluck('name')->implode(', ')
                     : 'N/A';
+                $venueNames = $user->venues()->exists()
+                    ? $user->venues->pluck('title')->implode(', ')
+                    : 'N/A';
+                $faNames = $user->fa()->exists()
+                    ? $user->fa->pluck('title')->implode(', ')
+                    : 'N/A';
                 $details = [
                     'name' => $user->name,
                     'email' => $user->email,
                     'event' => $eventNames,
-                    'role' => 'Customer'
+                    'venue' => $venueNames,
+                    'functional_area' => $faNames,
+                    'role' => 'Customer',
+                    'url' => config('app.url'),
                 ];
                 // Send email notification
                 Mail::to($user->email)->send(new AccessGrantedMail($details));
@@ -246,7 +313,7 @@ class UserController extends Controller
             DB::commit();
             return Redirect::route('login')->with($notification);
         } catch (\Exception $e) {
-            appLog('Validation error in UserController@store: ' . $e->getMessage());
+            Log::error('Validation error in UserController@store: ' . $e->getMessage());
             DB::rollBack();
             return redirect()->back()->withErrors($e->getMessage())->withInput();
         }

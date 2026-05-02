@@ -2,7 +2,7 @@ $(document).ready(function () {
     FilePond.registerPlugin(
         FilePondPluginImagePreview,
         FilePondPluginFileValidateType,
-        FilePondPluginFileValidateSize
+        FilePondPluginFileValidateSize,
     );
 
     const csrf = $('meta[name="csrf-token"]').attr("content");
@@ -92,7 +92,7 @@ $(document).ready(function () {
             });
 
             let isUploading = false;
-let originalSaveHtml = null;
+            let originalSaveHtml = null;
 
             // if (modalEl && blockCloseWhileUploading) {
             //     modalEl.addEventListener("hide.bs.modal", function (e) {
@@ -112,7 +112,7 @@ let originalSaveHtml = null;
                 // isUploading = true;
                 lockSave();
             });
- 
+
             pond.on("processfilestart", () => lockSave());
 
             pond.on("processfile", syncServerIds);
@@ -221,20 +221,20 @@ let originalSaveHtml = null;
     const createModal = document.getElementById("create_event_modal");
     if (createModal && window.EventPondCreate) {
         createModal.addEventListener("shown.bs.modal", () =>
-            window.EventPondCreate.refresh()
+            window.EventPondCreate.refresh(),
         );
         createModal.addEventListener("hidden.bs.modal", () =>
-            window.EventPondCreate.cancel()
+            window.EventPondCreate.cancel(),
         );
     }
 
     const editModal = document.getElementById("edit_event_modal");
     if (editModal && window.EventPondEdit) {
         editModal.addEventListener("shown.bs.modal", () =>
-            window.EventPondEdit.refresh()
+            window.EventPondEdit.refresh(),
         );
         editModal.addEventListener("hidden.bs.modal", () =>
-            window.EventPondEdit.cancel()
+            window.EventPondEdit.cancel(),
         );
     }
 });

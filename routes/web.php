@@ -202,6 +202,12 @@ Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmi
 Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmin|Customer',  'prevent-back-history', 'auth.session'])->group(function () {
     // docs used for filepond view inline
 
+    // File Upload (FilePond)
+    Route::controller(UploadController::class)->group(function () {
+        Route::post('/uploads/process', 'process')->name('uploads.process');
+        Route::delete('/uploads/revert', 'revert')->name('uploads.revert');
+    });
+
     // Event Image
     Route::controller(EventImageController::class)->group(function () {
         Route::get('/drs/setting/event/file/{id}', 'getPrivateFile')->name('drs.setting.event.file');
@@ -295,8 +301,10 @@ Route::get('/drs/logout', [DrsAuthAdminController::class, 'logout'])->name('drs.
 // ****************** ADMIN *********************
 Route::group(['middleware' => 'prevent-back-history'], function () {
 
-    // Add User
-    Route::get('/drs/auth/signup', [DrsAuthAdminController::class, 'signUp'])->name('auth.signup')->middleware('signed');
+    // Add User - with one-time token validation
+    Route::get('/drs/auth/signup', [DrsAuthAdminController::class, 'signUp'])
+        ->name('auth.signup')
+        ->middleware(['signed', 'validate.signed.token']);
     Route::post('/signup/store', [UserController::class, 'store'])->name('admin.signup.store');
 
     // Add User

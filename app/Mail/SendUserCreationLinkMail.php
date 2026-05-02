@@ -27,8 +27,12 @@ class SendUserCreationLinkMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        return $this->subject('VMS Account Activation')
-                    ->view('emails.user-creation-link');
+        return $this->subject('DRS Account Activation')
+                    ->view('emails.user-creation-link')
+                    ->with([
+                        'link' => $this->link,
+                        'name' => $this->name,
+            ]);
     }
 
     /**
@@ -37,7 +41,7 @@ class SendUserCreationLinkMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'VMS Account Activation',
+            subject: 'DRS Account Activation',
         );
     }
 

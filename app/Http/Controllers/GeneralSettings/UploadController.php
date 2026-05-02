@@ -100,78 +100,118 @@ class UploadController extends Controller
 
     public function process(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Collect all uploaded files (single or multiple)
-        |--------------------------------------------------------------------------
-        */
-        $files = [];
-
-        if ($request->hasFile('file')) {
-            $files = [$request->file('file')];
-        } elseif ($request->hasFile('qid_files')) {
-            $f = $request->file('qid_files');
-            $files = is_array($f) ? $f : [$f];
-        }
-
-        if (empty($files)) {
-            return response('No file uploaded', 422);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validate & process each file
-        |--------------------------------------------------------------------------
-        */
-        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-        $maxSize = 2 * 1024 * 1024; // 2MB
-
-        $serverIds = [];
-
-        foreach ($files as $file) {
-            if (!$file->isValid()) {
-                continue;
-            }
-
-            $mime = $file->getClientMimeType();
-
-            if (!in_array($mime, $allowedMimes)) {
-                return response('Invalid file type', 422);
-            }
-
-            if ($file->getSize() > $maxSize) {
-                return response('File too large', 422);
-            }
-
-            $path = $file->store('tmp/qid', 'private');
-            $serverId = (string) Str::uuid();
-
-            TempUpload::create([
-                'id'             => $serverId,
-                'path'           => $path,
-                'disk'           => 'private',
-                'user_id'        => auth()->id(), // null allowed
-                'original_name'  => $file->getClientOriginalName(),
-                'mime'           => $mime,
-                'size'           => $file->getSize(),
+        try {
+            Log::info('UploadController::process called', [
+                'has_file' => $request->hasFile('file'),
+                'has_qid_files' => $request->hasFile('qid_files'),
+                'all_files' => array_keys($request->allFiles()),
+                'content_type' => $request->header('Content-Type'),
             ]);
 
-            $serverIds[] = $serverId;
-        }
+            /*
+            |--------------------------------------------------------------------------
+            | Collect all uploaded files (single or multiple)
+            |--------------------------------------------------------------------------
+            */
+            $files = [];
 
-        /*
-        |--------------------------------------------------------------------------
-        | FilePond response
-        |--------------------------------------------------------------------------
-        | - Single upload → plain text
-        | - Multiple upload → JSON array
-        */
-        if (count($serverIds) === 1) {
-            return response($serverIds[0], 200)
-                ->header('Content-Type', 'text/plain');
-        }
+            if ($request->hasFile('file')) {
+                $files = [$request->file('file')];
+            } elseif ($request->hasFile('qid_files')) {
+                $f = $request->file('qid_files');
+                $files = is_array($f) ? $f : [$f];
+            }
 
-        return response()->json($serverIds);
+            if (empty($files)) {
+                Log::error('UploadController::process - No files found in request');
+                return response('No file uploaded', 422);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Validate & process each file
+            |--------------------------------------------------------------------------
+            */
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+
+            $serverIds = [];
+
+            foreach ($files as $file) {
+                if (!$file->isValid()) {
+                    Log::warning('UploadController::process - Invalid file', [
+                        'error' => $file->getError(),
+                    ]);
+                    continue;
+                }
+
+                $mime = $file->getClientMimeType();
+                Log::info('UploadController::process - Processing file', [
+                    'name' => $file->getClientOriginalName(),
+                    'mime' => $mime,
+                    'size' => $file->getSize(),
+                ]);
+
+                if (!in_array($mime, $allowedMimes)) {
+                    Log::error('UploadController::process - Invalid file type', [
+                        'mime' => $mime,
+                        'allowed' => $allowedMimes,
+                    ]);
+                    return response('Invalid file type: ' . $mime, 422);
+                }
+
+                if ($file->getSize() > $maxSize) {
+                    Log::error('UploadController::process - File too large', [
+                        'size' => $file->getSize(),
+                        'max' => $maxSize,
+                    ]);
+                    return response('File too large', 422);
+                }
+
+                $serverId = (string) Str::uuid();
+                $ext = $file->getClientOriginalExtension();
+                $filename = $serverId . ($ext ? '.' . $ext : '');
+                $path = 'tmp/qid/' . $filename;
+                Storage::disk('private')->put($path, file_get_contents($file->getPathname()));
+
+                TempUpload::create([
+                    'id'             => $serverId,
+                    'path'           => $path,
+                    'disk'           => 'private',
+                    'user_id'        => auth()->id(), // null allowed
+                    'original_name'  => $file->getClientOriginalName(),
+                    'mime'           => $mime,
+                    'size'           => $file->getSize(),
+                ]);
+
+                Log::info('UploadController::process - File stored successfully', [
+                    'serverId' => $serverId,
+                    'path' => $path,
+                ]);
+
+                $serverIds[] = $serverId;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FilePond response
+            |--------------------------------------------------------------------------
+            | - Single upload → plain text
+            | - Multiple upload → JSON array
+            */
+            if (count($serverIds) === 1) {
+                return response($serverIds[0], 200)
+                    ->header('Content-Type', 'text/plain');
+            }
+
+            return response()->json($serverIds);
+        } catch (\Exception $e) {
+            Log::error('UploadController::process - Exception occurred', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response('Upload failed: ' . $e->getMessage(), 500);
+        }
     }
 
 

@@ -24,7 +24,8 @@
 
                         <div class="col mb-3">
                             <div class="form-floating">
-                                <input class="form-control" id="add_name" name="name" type="text" placeholder="Name" value="{{ old('name', request('name')) }}">
+                                <input class="form-control" id="add_name" name="name" type="text" placeholder="Name"
+                                    value="{{ old('name', request('name')) }}">
                                 <label for="add_name">Name</label>
                             </div>
                         </div>
@@ -51,31 +52,49 @@
                                 @endforeach
                             </select>
                         </div>
-                        {{-- <div class="col-12 gy-3 mb-3">
-                            <label class="form-label" for="inputAddress2">Functional Area
-                                (multiple)</label>
-                            <select class="form-select js-select-fa-assign-multiple" id="add_fa_assigned_to" name="fa_id[]"
-                                multiple="multiple" data-with="100%"
-                                data-placeholder="<?= get_label('type_to_search', 'Type to search') ?>">
-                                @foreach ($clients as $functional_area)
-                                    <option value="{{ $functional_area->id }}">
-                                        {{ $functional_area->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div> --}}
+                        @if (config('settings.venue_user_management'))
+                            <div class="col-12 gy-3 mb-3">
+                                <label class="form-label" for="inputAddress2">Venue (multiple)</label>
+                                    (multiple)</label>
+                                <select class="form-select js-select-venue-assign-multiple" id="add_venue_assigned_to"
+                                    name="venue_id[]" multiple="multiple" data-with="100%"
+                                    data-placeholder="<?= get_label('type_to_search', 'Type to search') ?>">
+                                    @foreach ($venues as $venue)
+                                        <option value="{{ $venue->id }}">
+                                            {{ $venue->title }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        @if (config('settings.functional_area_user_management'))
+                            <div class="col-12 gy-3 mb-3">
+                                <label class="form-label" for="inputAddress2">Functional Area
+                                    (multiple)</label>
+                                <select class="form-select js-select-fa-assign-multiple" id="add_fa_assigned_to"
+                                    name="fa_id[]" multiple="multiple" data-with="100%"
+                                    data-placeholder="<?= get_label('type_to_search', 'Type to search') ?>">
+                                    @foreach ($fas as $functional_area)
+                                        <option value="{{ $functional_area->id }}">
+                                            {{ $functional_area->title }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
 
                         <div class="col-sm-6 col-md-9 mb-3">
                             @foreach ($roles as $key => $item)
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="inlineCheckbox{{ $item->id }}"
-                                        type="checkbox" name="roles[]" value="{{ $item->id }}">
+                                    <input class="form-check-input" id="inlineCheckbox{{ $item->id }}" type="checkbox"
+                                        name="roles[]" value="{{ $item->id }}">
                                     <label class="form-check-label"
                                         for="inlineCheckbox{{ $item->id }}">{{ $item->name }}</label>
                                 </div>
                             @endforeach
                         </div>
-                    
+
                         <button class="btn btn-primary w-100 mb-3">Register</button>
                     </div>
                 </div>
@@ -90,6 +109,7 @@
         $(document).ready(function() {
             $('.js-select-event-assign-multiple').select2();
             $('.js-select-fa-assign-multiple').select2();
+            $('.js-select-venue-assign-multiple').select2();
             // $('.js-select-role-assign-multiple').select2();
         });
     </script>

@@ -22,9 +22,9 @@ class AccessGrantedMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        return $this->subject('Access Granted for VMS System')
+        return $this->subject('Access Granted for DRS System')
             ->view('emails.account_access')
-            // ->from('mds@scqa0.onmicrosoft.com', 'VMS')
+            // ->from('mds@scqa0.onmicrosoft.com', 'DRS')
             ->with([
                 'details' => $this->details,
             ]);
@@ -36,7 +36,7 @@ class AccessGrantedMail extends Mailable implements ShouldQueue
     // public function envelope(): Envelope
     // {
     //     return new Envelope(
-    //         subject: 'Send User Creation Link',
+    //         subject: 'Access Granted for DRS System',
     //     );
     // }
 

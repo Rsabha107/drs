@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form novalidate="" class="modal-content form-submit-event needs-validation" id="form_submit_event"
-                action="{{ route('drs.setting.event.store') }}" method="POST">
+                action="{{ route('drs.setting.event.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="table" value="event_table">
                 <div class="modal-body">

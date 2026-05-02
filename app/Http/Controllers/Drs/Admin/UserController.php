@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\UtilController;
 use App\Mail\SendUserCreationLinkMail;
+use App\Models\Drs\FunctionalArea;
+use App\Models\Drs\Venue;
 use App\Services\SignedUserLinkGenerator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -36,8 +38,10 @@ class UserController extends Controller
         public function showForm()
     {
         $events = Event::all();
+        $functional_areas = FunctionalArea::all();
+        $venues = Venue::all();
         // $functional_areas = FunctionalArea::all();
-        return view('drs.admin.users.invite-user', compact('events'));
+        return view('drs.admin.users.invite-user', compact('events', 'functional_areas', 'venues'));
     }
 
     public function sendInvite(Request $request)
@@ -46,7 +50,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'event_id' => 'required|exists:events,id',
-            // 'functional_area_id' => 'required|exists:functional_areas,id',
+            'functional_area_id' => 'nullable|exists:functional_areas,id',
+            'venue_id' => 'nullable|exists:venues,id',
         ];
 
         $messages = [
@@ -58,21 +63,21 @@ class UserController extends Controller
             'email.unique' => 'This email is already registered.',
             'event_id.required' => 'Please select an event.',
             'event_id.exists' => 'The selected event is invalid.',
-            // 'functional_area_id.required' => 'Please select a functional area.',
-            // 'functional_area_id.exists' => 'The selected functional area is invalid.',
+            'functional_area_id.exists' => 'The selected functional area is invalid.',
+            'venue_id.exists' => 'The selected venue is invalid.',
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
-            appLog($validator->errors());
+            Log::info($validator->errors());
             $error = true;
             $type = 'success';
             $message = $validator->messages();
             return redirect()->back()->withErrors($message)->withInput();
         }
 
-        $link = SignedUserLinkGenerator::generate($request->name, $request->email, $request->event_id, 30); // valid for 30 mins
+        $link = SignedUserLinkGenerator::generate($request->name, $request->email, $request->event_id, $request->functional_area_id, $request->venue_id, 30); // valid for 30 mins
         Mail::to($request->email)->send(new SendUserCreationLinkMail($link, $request->name));
 
         return redirect()->back()->with('success', 'Invitation sent successfully to ' . $request->email);
@@ -81,7 +86,7 @@ class UserController extends Controller
     public function createViaLink(Request $request)
     {
         // Optional auto-creation if params are passed
-        appLog('Creating user via signed link. createViaLink');
+        Log::info('Creating user via signed link. createViaLink');
         // if ($request->filled(['name', 'email']) ) {
         //     $user = User::firstOrCreate(
         //         ['email' => $request->email],
@@ -98,11 +103,13 @@ class UserController extends Controller
         // }
 
         // Otherwise, show a creation form
-        appLog('No name or email provided, redirecting to signup form.');
+        Log::info('No name or email provided, redirecting to signup form.');
         return redirect()->route('drs.auth.signup', [
             'name' => $request->query('name'),
             'email' => $request->query('email'),
             'event_id' => $request->query('event_id'),
+            'functional_area_id' => $request->query('functional_area_id'),
+            'venue_id' => $request->query('venue_id'),
         ]);
     }
     
@@ -145,10 +152,10 @@ class UserController extends Controller
 
             $fileNameToStore = $filename . '_' . time() . '.' . $extension;
 
-            appLog($fileNameWithExt);
-            appLog($filename);
-            appLog($extension);
-            appLog($fileNameToStore);
+            Log::info($fileNameWithExt);
+            Log::info($filename);
+            Log::info($extension);
+            Log::info($fileNameToStore);
 
             // upload
             if ($user->photo != 'default.png') {
@@ -157,7 +164,7 @@ class UserController extends Controller
 
             $path = $request->file('file_name')->storeAs('public/upload/profile_images', $fileNameToStore);
             // $path = $file->move('upload/profile_images/', $fileNameToStore);
-            appLog($path);
+            Log::info($path);
 
 
         } else {

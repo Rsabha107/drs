@@ -70,8 +70,10 @@
         <div class="container">
             <form method="POST" action="{{ route('admin.signup.store') }}" class="forms-sample">
                 @csrf
+                <input type="hidden" name="token" value="{{ request('token') }}">
                 <input type="hidden" name="event_id[]" value="{{ request('event_id') }}">
-                <input type="hidden" name="functional_id[]" value="{{ request('functional_id') }}">
+                <input type="hidden" name="functional_area_id[]" value="{{ request('functional_area_id') }}">
+                <input type="hidden" name="venue_id[]" value="{{ request('venue_id') }}">
                 <input type="hidden" name="name" value="{{ request('name') }}">
                 <input type="hidden" name="email" value="{{ request('email') }}">
                 <div class="row flex-center min-vh-100 py-5">
@@ -82,6 +84,10 @@
                                     <h3 class="text-body-highlight">{{ config('settings.website_name') }}
                                     </h3>
                                     <p class="text-body-tertiary">Register</p>
+                                    <p class="text-body-tertiary">{{ getEventNameById(request('event_id')) }}</p>
+                                    <p class="text-body-tertiary">{{ getVenueNameById(request('venue_id')) }}</p>
+                                    <p class="text-body-tertiary">{{ getFunctionalAreaNameById(request('functional_area_id')) }}</p>
+
                                 </div>
                                 @if (count($errors) > 0)
                                     <div class="alert alert-danger">
@@ -110,10 +116,9 @@
                                         elementId="add_name" inputType="text" inputAttributes="" label="Name" value="{{ request('name') }}"
                                         required="required" disabled="disabled" /> --}}
 
-                                <x-formy.form_input class="col mb-3" floating="1" inputValue="" name="phone"
+                                {{-- <x-formy.form_input class="col mb-3" floating="1" inputValue="" name="phone"
                                     elementId="add_phone" inputType="text" inputAttributes="" label="Phone"
-                                    required="required" disabled="0" />
-
+                                    required="required" disabled="0" /> --}}
                                 {{-- <x-formy.form_select class="col-sm-12 col-md-12 mb-3" floating="1"
                                         selectedValue="" name="client_id" elementId="add_client_id"
                                         label="FA/Project" required="required" :forLoopCollection="$clients" itemIdForeach="id"

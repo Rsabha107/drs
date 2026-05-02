@@ -22,9 +22,9 @@ class AccountCreationMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        return $this->subject('VMS Account Creation')
+        return $this->subject('DRS Account Creation')
             ->view('emails.user_account_creation')
-            // ->from('mds@scqa0.onmicrosoft.com', 'VMS')
+            // ->from('mds@scqa0.onmicrosoft.com', 'DRS')
             ->with([
                 'details' => $this->details,
             ]);
@@ -36,7 +36,7 @@ class AccountCreationMail extends Mailable implements ShouldQueue
     // public function envelope(): Envelope
     // {
     //     return new Envelope(
-    //         subject: 'Send User Creation Link',
+    //         subject: 'DRS Account Creation',
     //     );
     // }
 

@@ -21,6 +21,22 @@ use Spatie\Permission\Models\Role;
  * @param string $path
  * @return string|null
  */
+
+function getEventNameById($id)
+{
+    return Event::where('id', $id)->value('name');
+}
+
+function getVenueNameById($id)
+{
+    return Venue::where('id', $id)->value('title');
+}
+
+function getFunctionalAreaNameById($id)
+{
+    return DB::table('functional_areas')->where('id', $id)->value('title');
+}
+
 function private_image_base64($disk, $path)
 {
     if (!Storage::disk($disk)->exists($path)) {

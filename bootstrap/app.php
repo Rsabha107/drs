@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'mutli.event' => \App\Http\Middleware\CheckEventSelection::class,
             'firstlogin' => \App\Http\Middleware\CheckFirstLoginMiddleware::class,
             'view-logs' => \App\Http\Middleware\ViewLogs::class,
+            'validate.signed.token' => \App\Http\Middleware\ValidateSignedUrlToken::class,
 
         ]);
     })

@@ -23,9 +23,11 @@ use App\Models\SiteCategory;
 use App\Models\Site;
 use App\Models\VenueType;
 use App\Models\Drs\Event;
+use App\Models\Drs\FunctionalArea as DrsFunctionalArea;
 use App\Models\Drs\Guardian;
 use App\Models\Drs\GuardianDocument;
 use App\Models\Drs\TempUpload;
+use App\Models\Drs\Venue;
 use App\Models\Task;
 use App\Models\Vapp\FunctionalArea;
 use App\Notifications\EmailOtpVerification;
@@ -516,7 +518,9 @@ class AdminController extends Controller
     {
         $events = Event::all();
         $roles = Role::all();
-        return view('auth.ms-sign-up', compact('events', 'roles'));
+        $fas = DrsFunctionalArea::all();
+        $venues = Venue::all();
+        return view('auth.ms-sign-up', compact('events', 'roles', 'fas', 'venues'));
     }
 
     public function forgotPassword()
