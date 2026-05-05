@@ -2,11 +2,12 @@ $(document).ready(function () {
     console.log("sheet_type.js file");
 
     // Function to load matches based on event_id and venue_id
-    function loadMatches(eventId, venueId, selectElementId) {
+    function loadMatches(eventId, venueId, selectElementId, callback) {
         const selectElement = $('#' + selectElementId);
         
         if (!eventId || !venueId) {
             selectElement.html('<option value="">Select event and venue first</option>').prop('disabled', true);
+            if (callback) callback();
             return;
         }
 
@@ -31,9 +32,12 @@ $(document).ready(function () {
                     selectElement.prop('disabled', false);
                 }
                 selectElement.html(html);
+                // Call the callback after dropdown is populated
+                if (callback) callback();
             },
             error: function() {
                 selectElement.html('<option value="">Error loading matches</option>').prop('disabled', true);
+                if (callback) callback();
             }
         });
     }
@@ -91,21 +95,35 @@ $(document).ready(function () {
                 $("#edit_sheet_type_code").val(response.op.code);
                 $("#edit_sheet_type_name").val(response.op.title);
                 $("#edit_sheet_type_description").val(response.op.description);
-                $("#edit_event_id").val(response.op.event_id).trigger("change");
-                
-                // Delay venue selection to allow event to load first
-                setTimeout(function() {
-                    $("#edit_venue_id").val(response.op.venue_id).trigger("change");
-                    
-                    // Delay match selection after matches are loaded
-                    setTimeout(function() {
-                        if (response.op.match_id) {
-                            $("#edit_match_id").val(response.op.match_id);
-                        }
-                    }, 500);
-                }, 300);
-                
                 $("#edit_sheet_type_table").val(table);
+                
+                // Set cuff_date_time if exists (convert to datetime-local format)
+                if (response.op.cuff_date_time) {
+                    // Convert to datetime-local format (YYYY-MM-DDTHH:MM)
+                    var cuffDateTime = new Date(response.op.cuff_date_time);
+                    var formattedDateTime = cuffDateTime.getFullYear() + '-' +
+                        String(cuffDateTime.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(cuffDateTime.getDate()).padStart(2, '0') + 'T' +
+                        String(cuffDateTime.getHours()).padStart(2, '0') + ':' +
+                        String(cuffDateTime.getMinutes()).padStart(2, '0');
+                    $("#edit_cuff_date_time").val(formattedDateTime);
+                } else {
+                    $("#edit_cuff_date_time").val('');
+                }
+                
+                // Set event first
+                $("#edit_event_id").val(response.op.event_id);
+                $("#edit_venue_id").val(response.op.venue_id);
+                
+                // Load matches with callback to set the selected match
+                loadMatches(response.op.event_id, response.op.venue_id, 'edit_match_id', function() {
+                    if (response.op.match_id) {
+                        console.log("Setting match_id to:", response.op.match_id);
+                        $("#edit_match_id").val(response.op.match_id);
+                    } else {
+                        console.log("No match_id in response");
+                    }
+                });
             },
         }).done(function () {
             $("#edit_sheet_type_modal").modal("show");

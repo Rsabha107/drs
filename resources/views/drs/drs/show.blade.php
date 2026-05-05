@@ -137,6 +137,11 @@
                 <button type="button" class="btn btn-subtle-info" data-bs-toggle="modal" data-bs-target="#copy_from_modal">
                     <i class="fa-solid fa-copy me-1"></i>Copy from DRS
                 </button>
+            @elseif (auth()->user()->hasRole('Customer') && $sheet->sheetType && $sheet->sheetType->cuff_date_time && \Carbon\Carbon::now()->gte(\Carbon\Carbon::parse($sheet->sheetType->cuff_date_time)))
+                <div class="alert alert-warning mb-0 py-2 px-3 d-flex align-items-center" role="alert">
+                    <i class="fa-solid fa-lock me-2"></i>
+                    <span>This sheet is locked - Cutoff time has passed ({{ \Carbon\Carbon::parse($sheet->sheetType->cuff_date_time)->format('d/m/Y H:i') }})</span>
+                </div>
             @endif
             @if (auth()->user()->hasRole('SuperAdminx'))
             <button type="button" class="btn btn-subtle-warning drs-edit" data-id="{{ $sheet->id }}">
@@ -352,13 +357,13 @@
 
 
         </div>
-        @if ($canEdit)
+        {{-- @if ($canEdit)
             <div class="card-footer no-print d-flex justify-content-end">
                 <button type="button" class="btn btn-sm btn-phoenix-danger" id="delete_sheet_btn">
                     <i class="fa-solid fa-trash me-1"></i>Delete Run Sheet
                 </button>
             </div>
-        @endif
+        @endif --}}
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════
@@ -693,7 +698,9 @@
         // }
 
         function itemActionsFormatter(value, row) {
-            if (!row.can_edit) return '';
+            if (!row.can_edit) {
+                return '<span class="badge bg-secondary"><i class="fa-solid fa-lock me-1"></i>Read Only</span>';
+            }
             return `
         <div class="d-flex flex-nowrap justify-content-end align-items-center gap-1 action-btns">
             <button type="button" class="btn btn-sm btn-phoenix-warning item-edit" data-id="${row.id}" title="Edit">

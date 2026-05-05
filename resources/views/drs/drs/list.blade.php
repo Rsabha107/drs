@@ -100,7 +100,7 @@
                             <th data-field="venue" data-sortable="false">Venue</th>
                             <th data-field="match" data-sortable="false">Match#</th>
                             <th data-field="match_date" data-sortable="false">Match Date</th>
-                            <th data-field="md_date" data-sortable="false">MD-x Date</th>
+                            <th data-field="md_date" data-sortable="false">DRS Date</th>
                             <th data-field="teams" data-sortable="false">Teams</th>
                             <th data-field="functional_area" data-sortable="false">Func. Area</th>
                             {{-- <th data-field="run_date" data-sortable="true">Date</th> --}}
@@ -220,13 +220,22 @@
                     '</button>'
                 );
             } else {
-                // Customer: Add Items button
+                // Customer: Add Items button (disabled if cuffed)
                 console.log('row:', row); // Debug log to check row data
-                actions.push(
-                    '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-primary" title="Add Items">',
-                    '<i class="fa-solid fa-plus me-1"></i>Add Items',
-                    '</a>'
-                );
+                if (row.is_cuffed) {
+                    // View button for locked sheets - items shown in read-only mode
+                    actions.push(
+                        '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-secondary" title="View (Read Only - Locked)">',
+                        '<i class="fa-solid fa-eye me-1"></i>View (Locked)',
+                        '</a>'
+                    );
+                } else {
+                    actions.push(
+                        '<a href="/drs/drs/' + row.id + '" class="btn btn-sm btn-phoenix-primary" title="Add Items">',
+                        '<i class="fa-solid fa-plus me-1"></i>Add Items',
+                        '</a>'
+                    );
+                }
             }
             
             return actions.join('');

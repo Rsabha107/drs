@@ -77,7 +77,7 @@ class DailyRunSheetController extends Controller
             ->where('event_id', $eventId)
             ->orderBy('venue_id')
             ->orderBy('match_id')
-            ->orderBy('sheet_type')
+            ->orderBy('sheet_type_id')
             ->get();
 
         // Group: venue → match_id → sheets

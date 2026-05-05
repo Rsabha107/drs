@@ -93,6 +93,7 @@ class SheetTypeController extends Controller
                 'match_number' => $op->match ? '<div class="align-middle white-space-wrap fs-9 ps-3">Match ' . $op->match->match_number . '</div>' : '-',
                 'match_date' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $matchDate . '</div>',
                 'md_date' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . $mdDate . '</div>',
+                'cuff_date_time' => '<div class="align-middle white-space-wrap fs-9 ps-3">' . ($op->cuff_date_time ? \Carbon\Carbon::parse($op->cuff_date_time)->format('d/m/Y H:i') : '-') . '</div>',
                 'actions' => $update_action . $delete_action,
                 'created_at' => format_date($op->created_at,  'H:i:s'),
                 'updated_at' => format_date($op->updated_at, 'H:i:s'),
@@ -116,6 +117,7 @@ class SheetTypeController extends Controller
             'event_id'          => 'required|exists:events,id',
             'venue_id'          => 'required|exists:venues,id',
             'match_id'          => 'nullable|exists:matches,id',
+            'cuff_date_time'    => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -133,6 +135,7 @@ class SheetTypeController extends Controller
                 'event_id'               => $request->event_id,
                 'venue_id'               => $request->venue_id,
                 'match_id'               => $request->match_id,
+                'cuff_date_time'         => $request->cuff_date_time,
                 'available_to_customer'  => true,
                 'sort_order'             => 0,
             ]);
@@ -166,6 +169,7 @@ class SheetTypeController extends Controller
             'event_id'          => 'required|exists:events,id',
             'venue_id'          => 'required|exists:venues,id',
             'match_id'          => 'nullable|exists:matches,id',
+            'cuff_date_time'    => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -185,6 +189,7 @@ class SheetTypeController extends Controller
                 'event_id'          => $request->event_id,
                 'venue_id'          => $request->venue_id,
                 'match_id'          => $request->match_id,
+                'cuff_date_time'    => $request->cuff_date_time,
             ]);
 
             return response()->json([

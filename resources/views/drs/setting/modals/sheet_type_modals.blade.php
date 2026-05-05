@@ -58,6 +58,10 @@
                             <option value="">Select match</option>
                         </select>
                     </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="create_cutoff_date_time" class="form-label"><?= get_label('cuff_date_time', 'Cutoff Date Time') ?></label>
+                        <input type="datetime-local" id="create_cuff_date_time" class="form-control" name="cuff_date_time" />
+                    </div>
 
 
                 </div>
@@ -134,6 +138,10 @@
                         <select id="edit_match_id" name="match_id" class="form-select">
                             <option value="">Select match</option>
                         </select>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="edit_cuff_date_time" class="form-label"><?= get_label('cuff_date_time', 'Cuff Date Time') ?></label>
+                        <input type="datetime-local" id="edit_cuff_date_time" class="form-control" name="cuff_date_time" />
                     </div>
 
 

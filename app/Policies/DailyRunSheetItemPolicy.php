@@ -18,20 +18,20 @@ class DailyRunSheetItemPolicy
 
     /**
      * Customer may update an item only when its parent run sheet belongs
-     * to one of the Customer's assigned functional areas.
+     * to one of the Customer's assigned functional areas and cuff time has not passed.
      */
     public function update(User $user, DailyRunSheetItem $item): bool
     {
-        return $this->ownsFunctionalArea($user, $item);
+        return $this->ownsFunctionalArea($user, $item) && !$this->isSheetLocked($item);
     }
 
     /**
      * Customer may delete an item only when its parent run sheet belongs
-     * to one of the Customer's assigned functional areas.
+     * to one of the Customer's assigned functional areas and cuff time has not passed.
      */
     public function delete(User $user, DailyRunSheetItem $item): bool
     {
-        return $this->ownsFunctionalArea($user, $item);
+        return $this->ownsFunctionalArea($user, $item) && !$this->isSheetLocked($item);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -45,5 +45,16 @@ class DailyRunSheetItemPolicy
         }
 
         return $user->fa()->where('functional_areas.id', $sheetFaId)->exists();
+    }
+
+    private function isSheetLocked(DailyRunSheetItem $item): bool
+    {
+        $sheetType = $item->runSheet?->sheetType;
+        
+        if (!$sheetType || !$sheetType->cuff_date_time) {
+            return false;
+        }
+
+        return \Carbon\Carbon::now()->gte(\Carbon\Carbon::parse($sheetType->cuff_date_time));
     }
 }

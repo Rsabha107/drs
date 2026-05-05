@@ -122,6 +122,12 @@ class DailyRunSheetController extends Controller
                 }
             }
 
+            // Check if cuff_date_time has passed
+            $isCuffed = false;
+            if ($s->sheetType && $s->sheetType->cuff_date_time) {
+                $isCuffed = Carbon::now()->gte(Carbon::parse($s->sheetType->cuff_date_time));
+            }
+
             return [
                 'id'               => $s->id,
                 'sheet_type_id'    => $s->sheet_type_id,
@@ -136,6 +142,8 @@ class DailyRunSheetController extends Controller
                 'gates_opening'    => '<span class="fs-9">' . ($s->gates_opening ? \Carbon\Carbon::parse($s->gates_opening)->format('H:i') : '-') . '</span>',
                 'kick_off'         => '<span class="fs-9">' . ($s->kick_off ? \Carbon\Carbon::parse($s->kick_off)->format('H:i') : '-') . '</span>',
                 'items_count'      => '<span class="badge bg-secondary">' . $s->items()->count() . '</span>',
+                'is_cuffed'        => $isCuffed,
+                'cuff_date_time'   => $s->sheetType?->cuff_date_time,
             ];
         });
 
@@ -240,7 +248,7 @@ class DailyRunSheetController extends Controller
         
         // Try to find a sheet by ID first, otherwise treat it as sheet_type_id
         $sheet = DailyRunSheet::where('event_id', $eventId)
-            ->with(['event', 'venue', 'match', 'functionalArea', 'items'])
+            ->with(['event', 'venue', 'match', 'functionalArea', 'items', 'sheetType'])
             ->find($id);
 
             // dd($sheet);
@@ -249,7 +257,7 @@ class DailyRunSheetController extends Controller
             // If not found by ID, assume it's a sheet_type_id and get the first sheet with that type
             $sheet = DailyRunSheet::where('event_id', $eventId)
                 ->where('sheet_type_id', $id)
-                ->with(['event', 'venue', 'match', 'functionalArea', 'items'])
+                ->with(['event', 'venue', 'match', 'functionalArea', 'items', 'sheetType'])
                 ->firstOrFail();
             $isSheetTypeView = true;
             $sheetTypeId = $id;
@@ -268,6 +276,13 @@ class DailyRunSheetController extends Controller
             $userFaIds = $user->fa()->pluck('functional_areas.id');
             // Log::info('Customer FA IDs', ['user_id' => $user->id, 'fa_ids' => $userFaIds->toArray()]);
             $canEdit = $userFaIds->contains($sheet->functional_area_id);
+            
+            // Check if cuff_date_time has passed for Customer role
+            if ($canEdit && $sheet->sheetType && $sheet->sheetType->cuff_date_time) {
+                if (Carbon::now()->gte(Carbon::parse($sheet->sheetType->cuff_date_time))) {
+                    $canEdit = false;
+                }
+            }
         } else {
             $canEdit = $user->hasRole('SuperAdmin');
         }
@@ -334,7 +349,7 @@ class DailyRunSheetController extends Controller
         }
 
         // Show items from all sheets in sheetIds
-        $query = DailyRunSheetItem::with('runSheet.functionalArea')
+        $query = DailyRunSheetItem::with(['runSheet.functionalArea', 'runSheet.sheetType'])
             ->whereIn('run_sheet_id', $sheetIds);
 
         if ($request->filled('search')) {
@@ -359,6 +374,16 @@ class DailyRunSheetController extends Controller
             $sheetFaId = $item->runSheet?->functional_area_id;
             $canEdit   = $authUser->hasRole('SuperAdmin')
                 || ($sheetFaId && in_array($sheetFaId, $userFaIds));
+
+            // Check if cuff_date_time has passed for Customer role
+            if ($canEdit && $authUser->hasRole('Customer')) {
+                $sheetType = $item->runSheet?->sheetType;
+                if ($sheetType && $sheetType->cuff_date_time) {
+                    if (Carbon::now()->gte(Carbon::parse($sheetType->cuff_date_time))) {
+                        $canEdit = false;
+                    }
+                }
+            }
 
             return [
                 'id'              => $item->id,
@@ -525,22 +550,51 @@ class DailyRunSheetController extends Controller
     {
         $request->validate(['source_id' => 'required|integer|exists:daily_run_sheets,id']);
 
-        $target = DailyRunSheet::findOrFail($id);
-        $source = DailyRunSheet::with('items')->findOrFail($request->source_id);
+        $target = DailyRunSheet::with('sheetType')->findOrFail($id);
+        $source = DailyRunSheet::with(['items', 'sheetType', 'functionalArea'])->findOrFail($request->source_id);
 
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
+        
+        // Check if Customer has access and if sheet is not locked
+        if ($authUser->hasRole('Customer')) {
+            abort_unless(
+                $target->functional_area_id &&
+                    $authUser->fa()->where('functional_areas.id', $target->functional_area_id)->exists(),
+                403,
+                'You do not have permission to edit this sheet.'
+            );
+            
+            // Check if cuff_date_time has passed
+            if ($target->sheetType && $target->sheetType->cuff_date_time) {
+                if (Carbon::now()->gte(Carbon::parse($target->sheetType->cuff_date_time))) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'This sheet is locked - Cutoff time has passed. No further edits are allowed.',
+                    ], 403);
+                }
+            }
+        }
 
-        // Log::info('Copying items from Daily Run Sheet', ['source_id' => $source->id, 'target_id' => $target->id, 'item_count' => $source->items->count()]);
-        // Log::debug('Source sheet details', ['source' => $source->toArray()]);
+        // If source is MD sheet, get template items to exclude them
+        $templateTitles = [];
+        if ($source->sheetType && $source->sheetType->code === 'MD' && $source->functionalArea) {
+            $templateItems = MdTemplateItem::where('fa_code', $source->functionalArea->fa_code)->get();
+            // Create array of template titles and locations for matching
+            $templateTitles = $templateItems->pluck('title')->toArray();
+        }
 
-        // $faLabel = $target->functionalArea
-        //     ? $target->functionalArea->fa_code . ' — ' . $target->functionalArea->title
-        //     : null;
-
-        // Log::debug('Functional area label for copied items', ['fa_label' => $faLabel]);
-        // Log::debug('First item before mapping', ['first_item' => $source->items->first() ? $source->items->first()->toArray() : null]);
+        // Filter items - exclude template items if source is MD
+        $itemsToProcess = $source->items;
+        if (!empty($templateTitles)) {
+            $itemsToProcess = $source->items->filter(function($item) use ($templateTitles) {
+                // Exclude items whose title matches a template item
+                return !in_array($item->title, $templateTitles);
+            });
+        }
 
         $now  = now();
-        $rows = $source->items->map(fn($item) => [
+        $rows = $itemsToProcess->map(fn($item) => [
             'run_sheet_id'    => $target->id,
             'title'           => $item->title,
             'start_time'      => $item->start_time,
@@ -591,12 +645,22 @@ class DailyRunSheetController extends Controller
         /** @var \App\Models\User $authUser */
         $authUser = Auth::user();
         if ($authUser->hasRole('Customer')) {
-            $parentSheet = DailyRunSheet::findOrFail($request->run_sheet_id);
+            $parentSheet = DailyRunSheet::with('sheetType')->findOrFail($request->run_sheet_id);
             abort_unless(
                 $parentSheet->functional_area_id &&
                     $authUser->fa()->where('functional_areas.id', $parentSheet->functional_area_id)->exists(),
                 403
             );
+            
+            // Check if cuff_date_time has passed
+            if ($parentSheet->sheetType && $parentSheet->sheetType->cuff_date_time) {
+                if (Carbon::now()->gte(Carbon::parse($parentSheet->sheetType->cuff_date_time))) {
+                    return response()->json([
+                        'error' => true,
+                        'message' => 'This sheet is locked - Cutoff time has passed. No further edits are allowed.',
+                    ], 403);
+                }
+            }
         }
 
         $item = DailyRunSheetItem::create($request->only([
@@ -676,7 +740,7 @@ class DailyRunSheetController extends Controller
             'countdown_to_ko' => 'nullable|string',
         ]);
 
-        $item = DailyRunSheetItem::with('runSheet')->findOrFail($request->id);
+        $item = DailyRunSheetItem::with('runSheet.sheetType')->findOrFail($request->id);
         $this->authorize('update', $item);
         $item->update($request->only([
             'title',
@@ -715,7 +779,7 @@ class DailyRunSheetController extends Controller
 
     public function itemDestroy($id)
     {
-        $item = DailyRunSheetItem::with('runSheet')->findOrFail($id);
+        $item = DailyRunSheetItem::with('runSheet.sheetType')->findOrFail($id);
         $this->authorize('delete', $item);
         $sheetId = $item->run_sheet_id;
         $item->delete();
@@ -731,7 +795,7 @@ class DailyRunSheetController extends Controller
 
     public function itemDuplicate($id)
     {
-        $item = DailyRunSheetItem::with('runSheet')->findOrFail($id);
+        $item = DailyRunSheetItem::with('runSheet.sheetType')->findOrFail($id);
         $this->authorize('update', $item);
 
         $copy = $item->replicate();

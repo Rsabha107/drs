@@ -44,6 +44,7 @@
                             <th data-sortable="true" data-field="match_number"><?= get_label('match_number', 'Match #') ?></th>
                             <th data-sortable="true" data-field="match_date"><?= get_label('match_date', 'Match Date') ?></th>
                             <th data-sortable="true" data-field="md_date"><?= get_label('md_date', 'MD-x Date') ?></th>
+                            <th data-sortable="true" data-field="cuff_date_time"><?= get_label('cuff_date_time', 'Cuff Date Time') ?></th>
                             <th data-sortable="true" data-field="actions" class="text-end">Actions</th>
                             <th data-sortable="true" data-field="created_at" data-visible="false"><?= get_label('created_at', 'Created at') ?></th>
                             <th data-sortable="true" data-field="updated_at" data-visible="false"><?= get_label('updated_at', 'Updated at') ?></th>
